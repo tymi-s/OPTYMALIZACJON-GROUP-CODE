@@ -1,0 +1,3 @@
+C:/Users/Tymon/CLionProjects/OPTYMALIZATION/cmake-build-debug/CMakeFiles/OPTYMALIZATION.dir
+C:/Users/Tymon/CLionProjects/OPTYMALIZATION/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/Tymon/CLionProjects/OPTYMALIZATION/cmake-build-debug/CMakeFiles/rebuild_cache.dir
