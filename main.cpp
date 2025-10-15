@@ -7,7 +7,7 @@ Katedra Informatyki Stosowanej i Modelowania
 Akademia Górniczo-Hutnicza
 Data ostatniej modyfikacji: 30.09.2025
 *********************************************/
-
+#include "opt_alg.cpp"
 #include"opt_alg.h"
 
 void lab0();
@@ -66,9 +66,7 @@ void lab0()
 	Y[0].~matrix();											// usuwamy z pamiêci rozwi¹zanie RR
 	Y[1].~matrix();
 }
-double f(double x) {
-	return cos(0.1*x)* exp(pow(0.1*x-2 *M_PI,2)) + 0.002*pow(0.1*x,2);
-}
+
 
 void lab1() {
 

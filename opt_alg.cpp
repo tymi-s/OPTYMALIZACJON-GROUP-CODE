@@ -37,36 +37,77 @@ solution MC(matrix(*ff)(matrix, matrix, matrix), int N, matrix lb, matrix ub, do
 	}
 }
 
-double* expansion(matrix(*ff)(matrix, matrix, matrix), double x0, double d, double alpha, int Nmax, matrix ud1, matrix ud2)
-{
-	try
-	{
-		double* p = new double[2] { 0, 0 };
-		//Tu wpisz kod funkcji
-
-		return p;
-	}
-	catch (string ex_info)
-	{
-		throw ("double* expansion(...):\n" + ex_info);
-	}
+double f(double x) {
+	return cos(0.1*x)* exp(pow(0.1*x-2 *M_PI,2)) + 0.002*pow(0.1*x,2);
 }
+vector<double> expansion(double (*ff)(double), double x0, double d, double alpha, int Nmax, matrix ud1, matrix ud2) {
 
-solution fib(matrix(*ff)(matrix, matrix, matrix), double a, double b, double epsilon, matrix ud1, matrix ud2)
-{
-	try
-	{
-		solution Xopt;
-		//Tu wpisz kod funkcji
 
-		return Xopt;
-	}
-	catch (string ex_info)
-	{
-		throw ("solution fib(...):\n" + ex_info);
-	}
+    try {
+        int i = 0;
+        vector<double> result(2, 0);
+        double x1 = x0 + d;
+
+        double f1 = ff(x0);
+        double f2 = ff(x1);
+
+        if (f2 == f1) {
+            result[0] = f1;
+            result[1] = f2;
+            return result;
+        }
+        if (f2 > f1) {
+            d = -d;
+            x1 = x0 + d;
+            if (ff(x0) >= ff(x1)) {
+                result[0] = x1;
+                result[1] = x0 - d;
+                return result;
+            }
+        }
+        while (ff(x0) < ff(x1)) {
+
+            if (Nmax) {
+                vector<double> error(0);
+                return error;
+            }
+            i += 1;
+            x1 = x0 + alpha * d;
+
+        }
+        if (d > 0) {
+            result[0] = x0;
+            result[1] = x1;
+            return result;
+        }
+        result[0] = x1;
+        result[1] = x0;
+        return result;
+
+
+
+
+
+        //Tu wpisz kod funkcji
+
+
+
+    }
+    catch (string ex_info) {
+        throw ("double* expansion(...):\n" + ex_info);
+    }
 
 }
+//solution fib(matrix(*ff)(matrix, matrix, matrix), double a, double b, double epsilon, matrix ud1, matrix ud2) {
+//    try {
+//        solution Xopt;
+//        //Tu wpisz kod funkcji
+//
+//    }
+//    catch (string ex_info) {
+//        throw ("solution fib(...):\n" + ex_info);
+//    }
+//}
 
 solution lag(matrix(*ff)(matrix, matrix, matrix), double a, double b, double epsilon, double gamma, int Nmax, matrix ud1, matrix ud2)
 {

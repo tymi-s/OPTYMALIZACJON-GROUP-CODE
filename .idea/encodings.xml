@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/main.cpp" charset="ISO-8859-1" />
+    <file url="file://$PROJECT_DIR$/matrix.cpp" charset="ISO-8859-1" />
+    <file url="file://$PROJECT_DIR$/matrix.h" charset="ISO-8859-1" />
+    <file url="file://$PROJECT_DIR$/ode_solver.cpp" charset="ISO-8859-1" />
+    <file url="file://$PROJECT_DIR$/ode_solver.h" charset="ISO-8859-1" />
+    <file url="file://$PROJECT_DIR$/opt_alg.cpp" charset="ISO-8859-1" />
+    <file url="file://$PROJECT_DIR$/opt_alg.h" charset="ISO-8859-1" />
+    <file url="file://$PROJECT_DIR$/solution.cpp" charset="ISO-8859-1" />
+    <file url="file://$PROJECT_DIR$/solution.h" charset="ISO-8859-1" />
+    <file url="file://$PROJECT_DIR$/user_funs.cpp" charset="ISO-8859-1" />
+  </component>
+</project>
