@@ -7,8 +7,9 @@ Katedra Informatyki Stosowanej i Modelowania
 Akademia Górniczo-Hutnicza
 Data ostatniej modyfikacji: 30.09.2025
 *********************************************/
+
 #include"opt_alg.h"
-#include <math.h>
+
 void lab0();
 void lab1();
 void lab2();
@@ -21,8 +22,7 @@ int main()
 {
 	try
 	{
-
-		lab0();
+		lab1();
 	}
 	catch (string EX_INFO)
 	{
@@ -34,24 +34,6 @@ int main()
 
 void lab0()
 {
-
-
-    //expansion
-
-    double x0 = 0.0;
-    double d = 1.0;
-    double alpha = 2.0;
-    int Nmaxx = 1000;
-
-    solution result = expansion(ff1T, x0, d, alpha, Nmaxx   );
-
-    cout << "Przedzial [a, b]:" << endl;
-    cout << "a = " << result.x(0) << endl;
-    cout << "b = " << result.x(1) << endl;
-    cout << "Liczba wywolan: " << solution::f_calls << endl;
-
-    solution::clear_calls();
-
 	//Funkcja testowa
 	double epsilon = 1e-2;									// dok³adnoœæ
 	int Nmax = 10000;										// maksymalna liczba wywo³añ funkcji celu
@@ -84,9 +66,14 @@ void lab0()
 	Y[1].~matrix();
 }
 
-
-void lab1() {
-        
+void lab1()
+{
+	double epsilon = 1e-8;
+	double gamma = 1e-10;
+	int Nmax = 10000;
+	int a = 0, b = 100;
+	solution opt = lag(ff1T, a, b, epsilon, gamma, Nmax);
+	cout << opt << endl << endl;
 }
 
 void lab2()
