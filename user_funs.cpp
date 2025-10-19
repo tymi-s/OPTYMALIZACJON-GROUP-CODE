@@ -1,5 +1,5 @@
 #include"user_funs.h"
-
+#include <math.h>
 matrix ff0T(matrix x, matrix ud1, matrix ud2)				// funkcja celu dla przypadku testowego
 {
 	matrix y;												// y zawiera wartoœæ funkcji celu
@@ -32,4 +32,11 @@ matrix df0(double t, matrix Y, matrix ud1, matrix ud2)
 	dY(0) = Y(1);																// pochodna z po³o¿enia to prêdkoœæ
 	dY(1) = ((t <= ud2(1)) * ud2(0) - m * g * l * sin(Y(0)) - b * Y(1)) / I;	// pochodna z prêdkoœci to przyspieszenie
 	return dY;
+}
+// Dodaj to do pliku z funkcjami testowymi (prawdopodobnie tam gdzie s? ff0T, ff0R, itp.)
+
+matrix ff1T(matrix x, matrix ud1, matrix ud2) {
+    matrix y;
+    y = -cos(0.1 * m2d(x)) * exp(-pow(0.1 * m2d(x) - 2 * M_PI, 2)) + 0.002 * pow(0.1 * m2d(x), 2);
+    return y;
 }

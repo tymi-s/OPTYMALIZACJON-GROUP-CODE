@@ -37,77 +37,81 @@ solution MC(matrix(*ff)(matrix, matrix, matrix), int N, matrix lb, matrix ub, do
 	}
 }
 
-double f(double x) {
-	return cos(0.1*x)* exp(pow(0.1*x-2 *M_PI,2)) + 0.002*pow(0.1*x,2);
-}
-vector<double> expansion(double (*ff)(double), double x0, double d, double alpha, int Nmax, matrix ud1, matrix ud2) {
 
-
+solution expansion(matrix(*ff)(matrix, matrix, matrix), double x0, double d, double alpha, int Nmax, matrix ud1, matrix ud2) {
     try {
-        int i = 0;
-        vector<double> result(2, 0);
-        double x1 = x0 + d;
+        solution Xopt;
 
-        double f1 = ff(x0);
-        double f2 = ff(x1);
+        solution X1(x0);
+        X1.fit_fun(ff, ud1, ud2);
 
-        if (f2 == f1) {
-            result[0] = f1;
-            result[1] = f2;
-            return result;
-        }
-        if (f2 > f1) {
+        solution X2(x0 + d);
+        X2.fit_fun(ff, ud1, ud2);
+
+        if (X2.y >= X1.y) {
             d = -d;
-            x1 = x0 + d;
-            if (ff(x0) >= ff(x1)) {
-                result[0] = x1;
-                result[1] = x0 - d;
-                return result;
+            X2.x = x0 + d;
+            X2.fit_fun(ff, ud1, ud2);
+
+            if (X2.y >= X1.y) {
+                Xopt.x = matrix(2, 1);
+                Xopt.x(0) = x0 - fabs(d);
+                Xopt.x(1) = x0 + fabs(d);
+                Xopt.flag = 1;
+                return Xopt;
             }
         }
-        while (ff(x0) < ff(x1)) {
 
-            if (Nmax) {
-                vector<double> error(0);
-                return error;
+        solution X3;
+        int i = 0;
+
+        do {
+            if (solution::f_calls > Nmax) {
+                Xopt.flag = 0;
+                Xopt.x = matrix(2, 1);
+                Xopt.x(0) = 0;
+                Xopt.x(1) = 0;
+                return Xopt;
             }
-            i += 1;
-            x1 = x0 + alpha * d;
+            i++;
 
+            X3.x = x0 + pow(alpha, i) * d;
+            X3.fit_fun(ff, ud1, ud2);
+
+            if (X3.y >= X2.y) {
+                break;
+            }
+            X1 = X2;
+            X2 = X3;
         }
+        while(true);
+
+        Xopt.x = matrix(2, 1);
+
         if (d > 0) {
-            result[0] = x0;
-            result[1] = x1;
-            return result;
+            Xopt.x(0) = m2d(X1.x);
+            Xopt.x(1) = m2d(X3.x);
+        } else {
+            Xopt.x(0) = m2d(X3.x);
+            Xopt.x(1) = m2d(X1.x);
         }
-        result[0] = x1;
-        result[1] = x0;
-        return result;
+        Xopt.flag = 1;
+        return Xopt;
+    }
+    catch (string ex_info) {
+        throw ("solution expansion(...):\n" + ex_info);
+    }
+}
 
-
-
-
-
-        //Tu wpisz kod funkcji
-
+solution fib(matrix(*ff)(matrix, matrix, matrix), double a, double b, double epsilon, matrix ud1, matrix ud2) {
+    try {
 
 
     }
     catch (string ex_info) {
-        throw ("double* expansion(...):\n" + ex_info);
+        throw ("solution fib(...):\n" + ex_info);
     }
-
 }
-//solution fib(matrix(*ff)(matrix, matrix, matrix), double a, double b, double epsilon, matrix ud1, matrix ud2) {
-//    try {
-//        solution Xopt;
-//        //Tu wpisz kod funkcji
-//
-//    }
-//    catch (string ex_info) {
-//        throw ("solution fib(...):\n" + ex_info);
-//    }
-//}
 
 solution lag(matrix(*ff)(matrix, matrix, matrix), double a, double b, double epsilon, double gamma, int Nmax, matrix ud1, matrix ud2)
 {
