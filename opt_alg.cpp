@@ -2,30 +2,30 @@
 
 solution MC(matrix(*ff)(matrix, matrix, matrix), int N, matrix lb, matrix ub, double epsilon, int Nmax, matrix ud1, matrix ud2)
 {
-	// Zmienne wejœciowe:
-	// ff - wskaŸnik do funkcji celu
+	// Zmienne wejÅ“ciowe:
+	// ff - wskaÅ¸nik do funkcji celu
 	// N - liczba zmiennych funkcji celu
-	// lb, ub - dolne i górne ograniczenie
-	// epslion - zak³¹dana dok³adnoœæ rozwi¹zania
-	// Nmax - maksymalna liczba wywo³añ funkcji celu
+	// lb, ub - dolne i gÃ³rne ograniczenie
+	// epslion - zakÂ³Â¹dana dokÂ³adnoÅ“Ã¦ rozwiÂ¹zania
+	// Nmax - maksymalna liczba wywoÂ³aÃ± funkcji celu
 	// ud1, ud2 - user data
 	try
 	{
 		solution Xopt;
 		while (true)
 		{
-			Xopt = rand_mat(N);									// losujemy macierz Nx1 stosuj¹c rozk³ad jednostajny na przedziale [0,1]
+			Xopt = rand_mat(N);									// losujemy macierz Nx1 stosujÂ¹c rozkÂ³ad jednostajny na przedziale [0,1]
 			for (int i = 0; i < N; ++i)
-				Xopt.x(i) = (ub(i) - lb(i)) * Xopt.x(i) + lb(i);// przeskalowywujemy rozwi¹zanie do przedzia³u [lb, ub]
-			Xopt.fit_fun(ff, ud1, ud2);							// obliczmy wartoœæ funkcji celu
+				Xopt.x(i) = (ub(i) - lb(i)) * Xopt.x(i) + lb(i);// przeskalowywujemy rozwiÂ¹zanie do przedziaÂ³u [lb, ub]
+			Xopt.fit_fun(ff, ud1, ud2);							// obliczmy wartoÅ“Ã¦ funkcji celu
 			if (Xopt.y < epsilon)								// sprawdzmy 1. kryterium stopu
 			{
-				Xopt.flag = 1;									// flaga = 1 ozancza znalezienie rozwi¹zanie z zadan¹ dok³adnoœci¹
+				Xopt.flag = 1;									// flaga = 1 ozancza znalezienie rozwiÂ¹zanie z zadanÂ¹ dokÂ³adnoÅ“ciÂ¹
 				break;
 			}
 			if (solution::f_calls > Nmax)						// sprawdzmy 2. kryterium stopu
 			{
-				Xopt.flag = 0;									// flaga = 0 ozancza przekroczenie maksymalne liczby wywo³añ funkcji celu
+				Xopt.flag = 0;									// flaga = 0 ozancza przekroczenie maksymalne liczby wywoÂ³aÃ± funkcji celu
 				break;
 			}
 		}
@@ -37,35 +37,80 @@ solution MC(matrix(*ff)(matrix, matrix, matrix), int N, matrix lb, matrix ub, do
 	}
 }
 
-double* expansion(matrix(*ff)(matrix, matrix, matrix), double x0, double d, double alpha, int Nmax, matrix ud1, matrix ud2)
-{
-	try
-	{
-		double* p = new double[2] { 0, 0 };
-		//Tu wpisz kod funkcji
 
-		return p;
-	}
-	catch (string ex_info)
-	{
-		throw ("double* expansion(...):\n" + ex_info);
-	}
+solution expansion(matrix(*ff)(matrix, matrix, matrix), double x0, double d, double alpha, int Nmax, matrix ud1, matrix ud2) {
+    try {
+        solution Xopt;
+
+        solution X1(x0);
+        X1.fit_fun(ff, ud1, ud2);
+
+        solution X2(x0 + d);
+        X2.fit_fun(ff, ud1, ud2);
+
+        if (X2.y >= X1.y) {
+            d = -d;
+            X2.x = x0 + d;
+            X2.fit_fun(ff, ud1, ud2);
+
+            if (X2.y >= X1.y) {
+                Xopt.x = matrix(2, 1);
+                Xopt.x(0) = x0 - fabs(d);
+                Xopt.x(1) = x0 + fabs(d);
+                Xopt.flag = 1;
+                return Xopt;
+            }
+        }
+
+        solution X3;
+        int i = 0;
+
+        do {
+            if (solution::f_calls > Nmax) {
+                Xopt.flag = 0;
+                Xopt.x = matrix(2, 1);
+                Xopt.x(0) = 0;
+                Xopt.x(1) = 0;
+                return Xopt;
+            }
+            i++;
+
+            X3.x = x0 + pow(alpha, i) * d;
+            X3.fit_fun(ff, ud1, ud2);
+
+            if (X3.y >= X2.y) {
+                break;
+            }
+            X1 = X2;
+            X2 = X3;
+        }
+        while(true);
+
+        Xopt.x = matrix(2, 1);
+
+        if (d > 0) {
+            Xopt.x(0) = m2d(X1.x);
+            Xopt.x(1) = m2d(X3.x);
+        } else {
+            Xopt.x(0) = m2d(X3.x);
+            Xopt.x(1) = m2d(X1.x);
+        }
+        Xopt.flag = 1;
+        return Xopt;
+    }
+    catch (string ex_info) {
+        throw ("solution expansion(...):\n" + ex_info);
+    }
 }
 
-solution fib(matrix(*ff)(matrix, matrix, matrix), double a, double b, double epsilon, matrix ud1, matrix ud2)
-{
-	try
-	{
-		solution Xopt;
-		//Tu wpisz kod funkcji
-	
-		return Xopt;
-	}
-	catch (string ex_info)
-	{
-		throw ("solution fib(...):\n" + ex_info);
-	}
+solution fib(matrix(*ff)(matrix, matrix, matrix), double a, double b, double epsilon, matrix ud1, matrix ud2) {
+    try {
 
+
+    }
+    catch (string ex_info) {
+        throw ("solution fib(...):\n" + ex_info);
+    }
 }
 
 solution lag(matrix(*ff)(matrix, matrix, matrix), double a, double b, double epsilon, double gamma, int Nmax, matrix ud1, matrix ud2)
@@ -120,7 +165,7 @@ solution lag(matrix(*ff)(matrix, matrix, matrix), double a, double b, double eps
 			}
 
 			if (solution::f_calls > Nmax)
-				throw string("Przekroczono maksymaln¹ liczbê wywo³añ funkcji celu");
+				throw string("Przekroczono maksymalnÄ… liczbÄ™ wywoÅ‚aÅ„ funkcji celu");
 			
 		} while (((b - a) > epsilon) && (fabs(d - dPrev) > gamma));
 
