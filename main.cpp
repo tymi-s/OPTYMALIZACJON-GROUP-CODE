@@ -1,15 +1,14 @@
 /*********************************************
-Kod stanowi uzupe≥nienie materia≥Ûw do ÊwiczeÒ
+Kod stanowi uzupe≈Çnienie materia≈Ç√≥w do ƒáwicze≈Ñ
 w ramach przedmiotu metody optymalizacji.
-Kod udostÍpniony na licencji CC BY-SA 3.0
-Autor: dr inø. £ukasz Sztangret
+Kod udostƒôpniony na licencji CC BY-SA 3.0
+Autor: dr in≈º. ≈Åukasz Sztangret
 Katedra Informatyki Stosowanej i Modelowania
-Akademia GÛrniczo-Hutnicza
+Akademia G√≥rniczo-Hutnicza
 Data ostatniej modyfikacji: 30.09.2025
 *********************************************/
-
 #include"opt_alg.h"
-
+#include <math.h>
 void lab0();
 void lab1();
 void lab2();
@@ -22,7 +21,8 @@ int main()
 {
 	try
 	{
-		lab1();
+
+		lab0();
 	}
 	catch (string EX_INFO)
 	{
@@ -34,37 +34,56 @@ int main()
 
 void lab0()
 {
+
+
+    //expansion
+
+    double x0 = 0.0;
+    double d = 1.0;
+    double alpha = 2.0;
+    int Nmaxx = 1000;
+
+    solution result = expansion(ff1T, x0, d, alpha, Nmaxx   );
+
+    cout << "Przedzial [a, b]:" << endl;
+    cout << "a = " << result.x(0) << endl;
+    cout << "b = " << result.x(1) << endl;
+    cout << "Liczba wywolan: " << solution::f_calls << endl;
+
+    solution::clear_calls();
+
 	//Funkcja testowa
-	double epsilon = 1e-2;									// dok≥adnoúÊ
-	int Nmax = 10000;										// maksymalna liczba wywo≥aÒ funkcji celu
-	matrix lb(2, 1, -5), ub(2, 1, 5),						// dolne oraz gÛrne ograniczenie
-		a(2, 1);											// dok≥adne rozwiπzanie optymalne
-	solution opt;											// rozwiπzanie optymalne znalezione przez algorytm
+	double epsilon = 1e-2;									// dok≈Çadno≈õƒá
+	int Nmax = 10000;										// maksymalna liczba wywo≈Ça≈Ñ funkcji celu
+	matrix lb(2, 1, -5), ub(2, 1, 5),						// dolne oraz g√≥rne ograniczenie
+		a(2, 1);											// dok≈Çadne rozwiƒÖzanie optymalne
+	solution opt;											// rozwiƒÖzanie optymalne znalezione przez algorytm
 	a(0) = -1;
 	a(1) = 2;
-	opt = MC(ff0T, 2, lb, ub, epsilon, Nmax, a);			// wywo≥anie procedury optymalizacji
+	opt = MC(ff0T, 2, lb, ub, epsilon, Nmax, a);			// wywo≈Çanie procedury optymalizacji
 	cout << opt << endl << endl;							// wypisanie wyniku
-	solution::clear_calls();								// wyzerowanie licznikÛw
+	solution::clear_calls();								// wyzerowanie licznik√≥w
 
 	//Wahadlo
-	Nmax = 1000;											// dok≥adnoúÊ
-	epsilon = 1e-2;											// maksymalna liczba wywo≥aÒ funkcji celu
-	lb = 0, ub = 5;											// dolne oraz gÛrne ograniczenie
-	double teta_opt = 1;									// maksymalne wychylenie wahad≥a
-	opt = MC(ff0R, 1, lb, ub, epsilon, Nmax, teta_opt);		// wywo≥anie procedury optymalizacji
+	Nmax = 1000;											// dok≈Çadno≈õƒá
+	epsilon = 1e-2;											// maksymalna liczba wywo≈Ça≈Ñ funkcji celu
+	lb = 0, ub = 5;											// dolne oraz g√≥rne ograniczenie
+	double teta_opt = 1;									// maksymalne wychylenie wahad≈Ça
+	opt = MC(ff0R, 1, lb, ub, epsilon, Nmax, teta_opt);		// wywo≈Çanie procedury optymalizacji
 	cout << opt << endl << endl;							// wypisanie wyniku
-	solution::clear_calls();								// wyzerowanie licznikÛw
+	solution::clear_calls();								// wyzerowanie licznik√≥w
 
 	//Zapis symulacji do pliku csv
-	matrix Y0 = matrix(2, 1),								// Y0 zawiera warunki poczπtkowe
-		MT = matrix(2, new double[2] { m2d(opt.x), 0.5 });	// MT zawiera moment si≥y dzia≥ajπcy na wahad≥o oraz czas dzia≥ania
-	matrix* Y = solve_ode(df0, 0, 0.1, 10, Y0, NAN, MT);	// rozwiπzujemy rÛwnanie rÛøniczkowe
-	ofstream Sout("symulacja_lab0.csv");					// definiujemy strumieÒ do pliku .csv
+	matrix Y0 = matrix(2, 1),								// Y0 zawiera warunki poczƒÖtkowe
+		MT = matrix(2, new double[2] { m2d(opt.x), 0.5 });	// MT zawiera moment si≈Çy dzia≈ÇajƒÖcy na wahad≈Ço oraz czas dzia≈Çania
+	matrix* Y = solve_ode(df0, 0, 0.1, 10, Y0, NAN, MT);	// rozwiƒÖzujemy r√≥wnanie r√≥≈ºniczkowe
+	ofstream Sout("symulacja_lab0.csv");					// definiujemy strumie≈Ñ do pliku .csv
 	Sout << hcat(Y[0], Y[1]);								// zapisyjemy wyniki w pliku
-	Sout.close();											// zamykamy strumieÒ
-	Y[0].~matrix();											// usuwamy z pamiÍci rozwiπzanie RR
+	Sout.close();											// zamykamy strumie≈Ñ
+	Y[0].~matrix();											// usuwamy z pamiƒôci rozwiƒÖzanie RR
 	Y[1].~matrix();
 }
+
 
 void lab1()
 {
