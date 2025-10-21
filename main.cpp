@@ -22,7 +22,7 @@ int main()
 	try
 	{
 
-		lab0();
+		lab1();
 	}
 	catch (string EX_INFO)
 	{
@@ -90,9 +90,16 @@ void lab1()
 	double epsilon = 1e-8;
 	double gamma = 1e-10;
 	int Nmax = 10000;
-	int a = 0, b = 100;
+	int a = 00, b = 100;
+	cout << "Lagrange" << endl;
 	solution opt = lag(ff1T, a, b, epsilon, gamma, Nmax);
 	cout << opt << endl << endl;
+	cout << "Expansion" << endl;
+	solution opt1 = expansion(ff1T, a, b, epsilon, gamma, Nmax);
+	cout << opt1 << endl << endl;
+	cout << "Fibonacci" << endl;
+	solution opt3 = fib(ff1T, a, b, epsilon, gamma, Nmax);
+	cout << opt3 << endl << endl;
 }
 
 void lab2()

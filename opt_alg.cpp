@@ -104,14 +104,73 @@ solution expansion(matrix(*ff)(matrix, matrix, matrix), double x0, double d, dou
 }
 
 solution fib(matrix(*ff)(matrix, matrix, matrix), double a, double b, double epsilon, matrix ud1, matrix ud2) {
-    try {
+
+	try
+		{
+
+			std::vector<double> F;
+			F.push_back(1.0);
+			F.push_back(1.0);
+
+			int k = 1;
+			double ratio = (b - a) / epsilon;
+
+			while (F[k] <= ratio)
+			{
+				F.push_back(F[k] + F[k-1]);
+				k++;
+			}
 
 
-    }
-    catch (string ex_info) {
-        throw ("solution fib(...):\n" + ex_info);
-    }
-}
+			int n = k;
+			std::vector<double> a_vec(n), b_vec(n), c_vec(n), d_vec(n);
+
+			a_vec[0] = a;
+			b_vec[0] = b;
+
+			c_vec[0] = b_vec[0] - (F[k-1] / F[k]) * (b_vec[0] - a_vec[0]);
+			d_vec[0] = a_vec[0] + b_vec[0] - c_vec[0];
+
+
+			for (int i = 0; i <= k - 3; i++)
+			{
+
+				matrix fc = ff(matrix(c_vec[i]), ud1, ud2);
+				matrix fd = ff(matrix(d_vec[i]), ud1, ud2);
+
+				if (fc(0, 0) < fd(0, 0))
+				{
+
+					a_vec[i+1] = a_vec[i];
+					b_vec[i+1] = d_vec[i];
+				}
+				else
+				{
+
+					b_vec[i+1] = b_vec[i];
+					a_vec[i+1] = c_vec[i];
+				}
+
+				c_vec[i+1] = b_vec[i+1] - (F[k-i-2] / F[k-i-1]) * (b_vec[i+1] - a_vec[i+1]);
+				d_vec[i+1] = a_vec[i+1] + b_vec[i+1] - c_vec[i+1];
+			}
+
+
+			solution Xopt;
+		double x_final = (a_vec[k-2] + b_vec[k-2]) / 2.0;
+
+			Xopt= c_vec[k-2];
+
+		Xopt.x = x_final;
+		matrix y_final = ff(matrix(x_final), ud1, ud2);
+		Xopt.y = y_final(0, 0);
+		return Xopt;
+		}
+		catch (string ex_info) {
+			throw ("solution fib(...):\n" + ex_info);
+		}
+	}
+
 
 solution lag(matrix(*ff)(matrix, matrix, matrix), double a, double b, double epsilon, double gamma, int Nmax, matrix ud1, matrix ud2)
 {

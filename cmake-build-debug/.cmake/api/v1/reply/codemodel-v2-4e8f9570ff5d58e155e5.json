@@ -49,12 +49,12 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "C:/Users/Tymon/CLionProjects/OPTYMALIZATION/cmake-build-debug",
-		"source" : "C:/Users/Tymon/CLionProjects/OPTYMALIZATION"
+		"build" : "C:/Users/Admin/CLionProjects/OPTYMALIZACJON-GROUP-CODE/cmake-build-debug",
+		"source" : "C:/Users/Admin/CLionProjects/OPTYMALIZACJON-GROUP-CODE"
 	},
 	"version" : 
 	{
 		"major" : 2,
-		"minor" : 6
+		"minor" : 7
 	}
 }
