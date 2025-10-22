@@ -2,30 +2,30 @@
 
 solution MC(matrix(*ff)(matrix, matrix, matrix), int N, matrix lb, matrix ub, double epsilon, int Nmax, matrix ud1, matrix ud2)
 {
-	// Zmienne wejœciowe:
-	// ff - wskaŸnik do funkcji celu
+	// Zmienne wejściowe:
+	// ff - wskaźnik do funkcji celu
 	// N - liczba zmiennych funkcji celu
 	// lb, ub - dolne i górne ograniczenie
-	// epslion - zak³¹dana dok³adnoœæ rozwi¹zania
-	// Nmax - maksymalna liczba wywo³añ funkcji celu
+	// epslion - zakłądana dokładność rozwiązania
+	// Nmax - maksymalna liczba wywołań funkcji celu
 	// ud1, ud2 - user data
 	try
 	{
 		solution Xopt;
 		while (true)
 		{
-			Xopt = rand_mat(N);									// losujemy macierz Nx1 stosuj¹c rozk³ad jednostajny na przedziale [0,1]
+			Xopt = rand_mat(N);									// losujemy macierz Nx1 stosując rozkład jednostajny na przedziale [0,1]
 			for (int i = 0; i < N; ++i)
-				Xopt.x(i) = (ub(i) - lb(i)) * Xopt.x(i) + lb(i);// przeskalowywujemy rozwi¹zanie do przedzia³u [lb, ub]
-			Xopt.fit_fun(ff, ud1, ud2);							// obliczmy wartoœæ funkcji celu
+				Xopt.x(i) = (ub(i) - lb(i)) * Xopt.x(i) + lb(i);// przeskalowywujemy rozwiązanie do przedziału [lb, ub]
+			Xopt.fit_fun(ff, ud1, ud2);							// obliczmy wartość funkcji celu
 			if (Xopt.y < epsilon)								// sprawdzmy 1. kryterium stopu
 			{
-				Xopt.flag = 1;									// flaga = 1 ozancza znalezienie rozwi¹zanie z zadan¹ dok³adnoœci¹
+				Xopt.flag = 1;									// flaga = 1 ozancza znalezienie rozwiązanie z zadaną dokładnością
 				break;
 			}
 			if (solution::f_calls > Nmax)						// sprawdzmy 2. kryterium stopu
 			{
-				Xopt.flag = 0;									// flaga = 0 ozancza przekroczenie maksymalne liczby wywo³añ funkcji celu
+				Xopt.flag = 0;									// flaga = 0 ozancza przekroczenie maksymalne liczby wywołań funkcji celu
 				break;
 			}
 		}
@@ -37,12 +37,12 @@ solution MC(matrix(*ff)(matrix, matrix, matrix), int N, matrix lb, matrix ub, do
 	}
 }
 
-
 double* expansion(matrix(*ff)(matrix, matrix, matrix), double x0, double d, double alpha, int Nmax, matrix ud1, matrix ud2)
 {
 	try
 	{
-		double* p = new double[2] { 0, 0 };
+		solution::clear_calls();
+		double* p = new double[3] { 0, 0, 0 };
 		int i = 0;
 		double x = x0 + d;
 		solution X0, X1;
@@ -54,6 +54,7 @@ double* expansion(matrix(*ff)(matrix, matrix, matrix), double x0, double d, doub
 		if (f0 == f1) {
 			p[0] = x0;
 			p[1] = x;
+			p[2] = X0.f_calls + X1.f_calls;
 			return p;
 		}
 
@@ -65,6 +66,7 @@ double* expansion(matrix(*ff)(matrix, matrix, matrix), double x0, double d, doub
 			if (f1 >= f0) {
 				p[0] = x;
 				p[1] = x0 - d;
+				p[2] = X0.f_calls + X1.f_calls;
 				return p;
 			}
 		}
@@ -86,11 +88,13 @@ double* expansion(matrix(*ff)(matrix, matrix, matrix), double x0, double d, doub
 		if (d > 0) {
 			p[0] = xPrev;
 			p[1] = x;
+			p[2] = X0.f_calls + X1.f_calls;
 			return p;
 		}
 
 		p[0] = x;
 		p[1] = xPrev;
+		p[2] = X0.f_calls + X1.f_calls;
 		return p;
 	}
 	catch (string ex_info)
@@ -102,77 +106,76 @@ double* expansion(matrix(*ff)(matrix, matrix, matrix), double x0, double d, doub
 solution fib(matrix(*ff)(matrix, matrix, matrix), double a, double b, double epsilon, matrix ud1, matrix ud2) {
 
 	try
+	{
+		solution::clear_calls();
+		std::vector<double> F;
+		F.push_back(1.0);
+		F.push_back(1.0);
+
+		int k = 1;
+		double ratio = (b - a) / epsilon;
+
+		while (F[k] <= ratio)
+		{
+			F.push_back(F[k] + F[k - 1]);
+			k++;
+		}
+
+
+		int n = k;
+		std::vector<double> a_vec(n), b_vec(n), c_vec(n), d_vec(n);
+
+		a_vec[0] = a;
+		b_vec[0] = b;
+
+		c_vec[0] = b_vec[0] - (F[k - 1] / F[k]) * (b_vec[0] - a_vec[0]);
+		d_vec[0] = a_vec[0] + b_vec[0] - c_vec[0];
+
+
+		for (int i = 0; i <= k - 3; i++)
 		{
 
-			std::vector<double> F;
-			F.push_back(1.0);
-			F.push_back(1.0);
+			matrix fc = ff(matrix(c_vec[i]), ud1, ud2);
+			matrix fd = ff(matrix(d_vec[i]), ud1, ud2);
 
-			int k = 1;
-			double ratio = (b - a) / epsilon;
-
-			while (F[k] <= ratio)
-			{
-				F.push_back(F[k] + F[k-1]);
-				k++;
-			}
-
-
-			int n = k;
-			std::vector<double> a_vec(n), b_vec(n), c_vec(n), d_vec(n);
-
-			a_vec[0] = a;
-			b_vec[0] = b;
-
-			c_vec[0] = b_vec[0] - (F[k-1] / F[k]) * (b_vec[0] - a_vec[0]);
-			d_vec[0] = a_vec[0] + b_vec[0] - c_vec[0];
-
-
-			for (int i = 0; i <= k - 3; i++)
+			if (fc(0, 0) < fd(0, 0))
 			{
 
-				matrix fc = ff(matrix(c_vec[i]), ud1, ud2);
-				matrix fd = ff(matrix(d_vec[i]), ud1, ud2);
+				a_vec[i + 1] = a_vec[i];
+				b_vec[i + 1] = d_vec[i];
+			}
+			else
+			{
 
-				if (fc(0, 0) < fd(0, 0))
-				{
-
-					a_vec[i+1] = a_vec[i];
-					b_vec[i+1] = d_vec[i];
-				}
-				else
-				{
-
-					b_vec[i+1] = b_vec[i];
-					a_vec[i+1] = c_vec[i];
-				}
-
-				c_vec[i+1] = b_vec[i+1] - (F[k-i-2] / F[k-i-1]) * (b_vec[i+1] - a_vec[i+1]);
-				d_vec[i+1] = a_vec[i+1] + b_vec[i+1] - c_vec[i+1];
+				b_vec[i + 1] = b_vec[i];
+				a_vec[i + 1] = c_vec[i];
 			}
 
+			c_vec[i + 1] = b_vec[i + 1] - (F[k - i - 2] / F[k - i - 1]) * (b_vec[i + 1] - a_vec[i + 1]);
+			d_vec[i + 1] = a_vec[i + 1] + b_vec[i + 1] - c_vec[i + 1];
+		}
 
-			solution Xopt;
-		double x_final = (a_vec[k-2] + b_vec[k-2]) / 2.0;
 
-			Xopt= c_vec[k-2];
+		solution Xopt;
+		double x_final = (a_vec[k - 2] + b_vec[k - 2]) / 2.0;
+
+		Xopt = c_vec[k - 2];
 
 		Xopt.x = x_final;
 		matrix y_final = ff(matrix(x_final), ud1, ud2);
 		Xopt.y = y_final(0, 0);
+		Xopt.flag = 1;
 		return Xopt;
-		}
-		catch (string ex_info) {
-			throw ("solution fib(...):\n" + ex_info);
-		}
 	}
-
+	catch (string ex_info) {
+		throw ("solution fib(...):\n" + ex_info);
+	}
+}
 
 solution lag(matrix(*ff)(matrix, matrix, matrix), double a, double b, double epsilon, double gamma, int Nmax, matrix ud1, matrix ud2)
 {
 	try {
 		solution Xopt;
-		//Tu wpisz kod funkcji
 		solution::clear_calls();
 
 		double c = (a + b) / 2.0;
@@ -191,8 +194,12 @@ solution lag(matrix(*ff)(matrix, matrix, matrix), double a, double b, double eps
 			double l = fa * (b * b - c * c) + fb * (c * c - a * a) + fc * (a * a - b * b);
 			double m = fa * (b - c) + fb * (c - a) + fc * (a - b);
 
-			if (m <= 0) {
-				throw string("m <= 0");
+			if (m <= 0.0) {
+				cout << "m <= 0\n";
+				Xopt.x = NAN;
+				Xopt.y = NAN;
+				Xopt.flag = -1;
+				return Xopt;
 			}
 
 			dPrev = d;
@@ -220,13 +227,13 @@ solution lag(matrix(*ff)(matrix, matrix, matrix), double a, double b, double eps
 			}
 
 			if (solution::f_calls > Nmax)
-				throw string("Przekroczono maksymalną liczbę wywołań funkcji celu");
+				throw string("Przekroczono maksymalna liczbe wywolan");
 			
 		} while (((b - a) > epsilon) && (fabs(d - dPrev) > gamma));
 
 		Xopt.x = matrix(d);
 		Xopt.y = ff(Xopt.x, ud1, ud2);
-		Xopt.flag = 0;
+		Xopt.flag = 1;
 
 		return Xopt;
 	}
@@ -398,4 +405,3 @@ solution EA(matrix(*ff)(matrix, matrix, matrix), int N, matrix lb, matrix ub, in
 		throw ("solution EA(...):\n" + ex_info);
 	}
 }
-
