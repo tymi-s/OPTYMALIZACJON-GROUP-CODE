@@ -1,5 +1,5 @@
 #include"user_funs.h"
-
+#include <math.h>
 #define M_PI 3.141592
 
 matrix ff0T(matrix x, matrix ud1, matrix ud2)				// funkcja celu dla przypadku testowego
