@@ -87,19 +87,39 @@ void lab0()
 
 void lab1()
 {
+	//Funkcja testowa
+	srand(time(NULL));
 	double epsilon = 1e-8;
 	double gamma = 1e-10;
-	int Nmax = 10000;
-	int a = 00, b = 100;
-	cout << "Lagrange" << endl;
-	solution opt = lag(ff1T, a, b, epsilon, gamma, Nmax);
-	cout << opt << endl << endl;
-	cout << "Expansion" << endl;
-	solution opt1 = expansion(ff1T, a, b, epsilon, gamma, Nmax);
-	cout << opt1 << endl << endl;
-	cout << "Fibonacci" << endl;
-	solution opt3 = fib(ff1T, a, b, epsilon, gamma, Nmax);
-	cout << opt3 << endl << endl;
+	double alpha = 1.5;
+	double x0 = (rand() % 100) - 50, d = 2.0;
+	int Nmax = 1000;
+	int a = 0, b = 100;
+	ofstream Sout("symulacja_lab1.csv");
+
+	for (int i = 0; i < 100; ++i) {
+		cout << "Punkt startowy: " << x0 << endl;
+		cout << "Expansion" << endl;
+		solution opt1;
+		double* p = expansion(ff1T, x0, d, alpha, Nmax);
+		opt1.x = p[0]; opt1.y = p[1]; opt1.f_calls = p[2];
+		cout << "[" << p[0] << "," << p[1] << "]" << endl << "f_calls = " << p[2] << endl << endl;
+		Sout << x0 << ";" << opt1.x << ";" << opt1.y << ";" << opt1.f_calls << ";";
+
+		cout << "Fibonacci" << endl;
+		solution opt3 = fib(ff1T, p[0], p[1], epsilon, gamma, Nmax);
+		cout << opt3 << endl << endl;
+		Sout << opt3.x << ";" << opt3.y << ";" << opt3.f_calls << ";";
+
+		cout << "Lagrange" << endl;
+		solution opt = lag(ff1T, p[0], p[1], epsilon, gamma, Nmax);
+		cout << opt << endl << endl;
+		Sout << opt.x << ";" << opt.y << ";" << opt.f_calls << ";\n";
+
+		++x0;
+		delete[] p;
+	}
+	Sout.close();
 }
 
 void lab2()
@@ -126,3 +146,4 @@ void lab6()
 {
 
 }
+
