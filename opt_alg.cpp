@@ -38,69 +38,65 @@ solution MC(matrix(*ff)(matrix, matrix, matrix), int N, matrix lb, matrix ub, do
 }
 
 
-solution expansion(matrix(*ff)(matrix, matrix, matrix), double x0, double d, double alpha, int Nmax, matrix ud1, matrix ud2) {
-    try {
-        solution Xopt;
+double* expansion(matrix(*ff)(matrix, matrix, matrix), double x0, double d, double alpha, int Nmax, matrix ud1, matrix ud2)
+{
+	try
+	{
+		double* p = new double[2] { 0, 0 };
+		int i = 0;
+		double x = x0 + d;
+		solution X0, X1;
 
-        solution X1(x0);
-        X1.fit_fun(ff, ud1, ud2);
+		X0.x = x0;
+		double f0 = m2d(X0.fit_fun(ff, ud1, ud2));
+		X1.x = x;
+		double f1 = m2d(X1.fit_fun(ff, ud1, ud2));
+		if (f0 == f1) {
+			p[0] = x0;
+			p[1] = x;
+			return p;
+		}
 
-        solution X2(x0 + d);
-        X2.fit_fun(ff, ud1, ud2);
+		if (f1 > f0) {
+			d = -d;
+			x = x0 + d;
+			X1.x = x;
+			f1 = m2d(X1.fit_fun(ff, ud1, ud2));
+			if (f1 >= f0) {
+				p[0] = x;
+				p[1] = x0 - d;
+				return p;
+			}
+		}
 
-        if (X2.y >= X1.y) {
-            d = -d;
-            X2.x = x0 + d;
-            X2.fit_fun(ff, ud1, ud2);
+		double xPrev;
+		do {
+			if (solution::f_calls > Nmax) {
+				throw string("Przekroczono maksymalna liczbe wywolan\n");
+			}
 
-            if (X2.y >= X1.y) {
-                Xopt.x = matrix(2, 1);
-                Xopt.x(0) = x0 - fabs(d);
-                Xopt.x(1) = x0 + fabs(d);
-                Xopt.flag = 1;
-                return Xopt;
-            }
-        }
+			i++;
+			xPrev = x;
+			x = x0 + pow(alpha, i) * d;
+			f0 = f1;
+			X1.x = x;
+			f1 = m2d(X1.fit_fun(ff, ud1, ud2));
+		} while (f0 > f1);
 
-        solution X3;
-        int i = 0;
+		if (d > 0) {
+			p[0] = xPrev;
+			p[1] = x;
+			return p;
+		}
 
-        do {
-            if (solution::f_calls > Nmax) {
-                Xopt.flag = 0;
-                Xopt.x = matrix(2, 1);
-                Xopt.x(0) = 0;
-                Xopt.x(1) = 0;
-                return Xopt;
-            }
-            i++;
-
-            X3.x = x0 + pow(alpha, i) * d;
-            X3.fit_fun(ff, ud1, ud2);
-
-            if (X3.y >= X2.y) {
-                break;
-            }
-            X1 = X2;
-            X2 = X3;
-        }
-        while(true);
-
-        Xopt.x = matrix(2, 1);
-
-        if (d > 0) {
-            Xopt.x(0) = m2d(X1.x);
-            Xopt.x(1) = m2d(X3.x);
-        } else {
-            Xopt.x(0) = m2d(X3.x);
-            Xopt.x(1) = m2d(X1.x);
-        }
-        Xopt.flag = 1;
-        return Xopt;
-    }
-    catch (string ex_info) {
-        throw ("solution expansion(...):\n" + ex_info);
-    }
+		p[0] = x;
+		p[1] = xPrev;
+		return p;
+	}
+	catch (string ex_info)
+	{
+		throw ("double* expansion(...):\n" + ex_info);
+	}
 }
 
 solution fib(matrix(*ff)(matrix, matrix, matrix), double a, double b, double epsilon, matrix ud1, matrix ud2) {
@@ -402,3 +398,4 @@ solution EA(matrix(*ff)(matrix, matrix, matrix), int N, matrix lb, matrix ub, in
 		throw ("solution EA(...):\n" + ex_info);
 	}
 }
+
