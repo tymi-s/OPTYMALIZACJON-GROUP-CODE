@@ -45,28 +45,28 @@ double* expansion(matrix(*ff)(matrix, matrix, matrix), double x0, double d, doub
 		double* p = new double[3] { 0, 0, 0 };
 		int i = 0;
 		double x = x0 + d;
-		solution X0, X1;
+		solution Xopt;
 
-		X0.x = x0;
-		double f0 = m2d(X0.fit_fun(ff, ud1, ud2));
-		X1.x = x;
-		double f1 = m2d(X1.fit_fun(ff, ud1, ud2));
+		Xopt.x = x0;
+		double f0 = m2d(Xopt.fit_fun(ff, ud1, ud2));
+		Xopt.x = x;
+		double f1 = m2d(Xopt.fit_fun(ff, ud1, ud2));
 		if (f0 == f1) {
 			p[0] = x0;
 			p[1] = x;
-			p[2] = X0.f_calls + X1.f_calls;
+			p[2] = Xopt.f_calls;
 			return p;
 		}
 
 		if (f1 > f0) {
 			d = -d;
 			x = x0 + d;
-			X1.x = x;
-			f1 = m2d(X1.fit_fun(ff, ud1, ud2));
+			Xopt.x = x;
+			f1 = m2d(Xopt.fit_fun(ff, ud1, ud2));
 			if (f1 >= f0) {
 				p[0] = x;
 				p[1] = x0 - d;
-				p[2] = X0.f_calls + X1.f_calls;
+				p[2] = Xopt.f_calls;
 				return p;
 			}
 		}
@@ -81,20 +81,20 @@ double* expansion(matrix(*ff)(matrix, matrix, matrix), double x0, double d, doub
 			xPrev = x;
 			x = x0 + pow(alpha, i) * d;
 			f0 = f1;
-			X1.x = x;
-			f1 = m2d(X1.fit_fun(ff, ud1, ud2));
+			Xopt.x = x;
+			f1 = m2d(Xopt.fit_fun(ff, ud1, ud2));
 		} while (f0 > f1);
 
 		if (d > 0) {
 			p[0] = xPrev;
 			p[1] = x;
-			p[2] = X0.f_calls + X1.f_calls;
+			p[2] = Xopt.f_calls;
 			return p;
 		}
 
 		p[0] = x;
 		p[1] = xPrev;
-		p[2] = X0.f_calls + X1.f_calls;
+		p[2] = Xopt.f_calls;
 		return p;
 	}
 	catch (string ex_info)
@@ -131,12 +131,13 @@ solution fib(matrix(*ff)(matrix, matrix, matrix), double a, double b, double eps
 		c_vec[0] = b_vec[0] - (F[k - 1] / F[k]) * (b_vec[0] - a_vec[0]);
 		d_vec[0] = a_vec[0] + b_vec[0] - c_vec[0];
 
-
+		solution Xopt;
 		for (int i = 0; i <= k - 3; i++)
 		{
-
-			matrix fc = ff(matrix(c_vec[i]), ud1, ud2);
-			matrix fd = ff(matrix(d_vec[i]), ud1, ud2);
+			Xopt.x = c_vec[i];
+			matrix fc = Xopt.fit_fun(ff, ud1, ud2);
+			Xopt.x = d_vec[i];
+			matrix fd = Xopt.fit_fun(ff, ud1, ud2);
 
 			if (fc(0, 0) < fd(0, 0))
 			{
@@ -155,14 +156,11 @@ solution fib(matrix(*ff)(matrix, matrix, matrix), double a, double b, double eps
 			d_vec[i + 1] = a_vec[i + 1] + b_vec[i + 1] - c_vec[i + 1];
 		}
 
-
-		solution Xopt;
 		double x_final = (a_vec[k - 2] + b_vec[k - 2]) / 2.0;
-
 		Xopt = c_vec[k - 2];
 
 		Xopt.x = x_final;
-		matrix y_final = ff(matrix(x_final), ud1, ud2);
+		matrix y_final = Xopt.fit_fun(ff, ud1, ud2);
 		Xopt.y = y_final(0, 0);
 		Xopt.flag = 1;
 		return Xopt;
@@ -405,3 +403,4 @@ solution EA(matrix(*ff)(matrix, matrix, matrix), int N, matrix lb, matrix ub, in
 		throw ("solution EA(...):\n" + ex_info);
 	}
 }
+
