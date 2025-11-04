@@ -244,13 +244,8 @@ solution HJ(matrix(*ff)(matrix, matrix, matrix), matrix x0, double s, double alp
 {
 	try
 	{
-<<<<<<< HEAD
-		solution Xopt;
-
-=======
 		solution Xopt, XB;
 		XB.x = x0;
->>>>>>> fffd19ad14d5ef37366f89dbf931008366788783
 
 		int n = get_size(XB.x)[0];
 		matrix dirs = ident_mat(n);

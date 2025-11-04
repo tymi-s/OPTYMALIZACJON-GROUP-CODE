@@ -9,6 +9,7 @@ Data ostatniej modyfikacji: 30.09.2025
 *********************************************/
 #include"opt_alg.h"
 #include <math.h>
+#include "user_funs.h"
 void lab0();
 void lab1();
 void lab2();
@@ -126,14 +127,40 @@ void lab1()
 
 void lab2()
 {
-	double x0data[2] = { -1.0, 1.0 };
-	matrix x0(2,x0data);
-	double s = 0.5, alpha = 0.5, epsilon = 1e-6;
-	
-	solution::clear_calls;
-	solution opt = HJ(ff2T, x0, s, alpha, epsilon, 10000);
+	srand(time(NULL));
 
-	cout << opt << endl;
+	double s = 0.15, alpha = 0.5, epsilon = 1e-6;
+	double beta= 0.5;
+	ofstream file("wyniki_Rosenbrock.csv");
+	file << "x1;x2;X1_min;X2_min;Y;Wywolania\n";
+
+	for (int i=0;i<100;++i) {
+		double x0data[2];
+		x0data[0]=((rand()%200)/100.0)-1.0;
+		x0data[1]=((rand()%200)/100.0)-1.0;
+		matrix x0(2,x0data);
+		cout << "Punkty startowe:( " << x0data[0] <<" , " << x0data[1] <<")"<< endl;
+		solution::clear_calls();
+		 solution opt1 = HJ(ff2T,x0, s, alpha, epsilon, 10000);
+		//cout << "Hook-Jeeves" << endl;
+		// cout <<"X = ("<<  opt1.x(0) <<","<< opt1.x(1) << ")" << endl;
+		// cout <<"Y = " <<  opt1.y << endl;
+		// cout <<"Wywolania funkcji: " << opt1.f_calls << ";" << endl;
+		solution opt2 = Rosen(ff2T,x0, s, alpha,beta, epsilon, 10000);
+		cout << "Rosenbrock" << endl;
+		cout <<"X = ("<<  opt2.x(0) <<","<< opt2.x(1) << ")" << endl;
+		cout <<"Y = " <<  opt2.y << endl;
+		cout <<"Wywolania funkcji: " << opt2.f_calls << ";" << endl;
+
+		file << x0data[0] << ";"
+		 << x0data[1] << ";"
+		 << opt2.x(0) << ";"
+		 << opt2.x(1) << ";"
+		 << opt2.y << ";"
+		 << opt2.f_calls << "\n";
+
+	}
+
 }
 
 void lab3()
