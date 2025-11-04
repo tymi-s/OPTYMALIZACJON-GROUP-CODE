@@ -131,8 +131,11 @@ void lab2()
 
 	double s = 0.15, alpha = 0.5, epsilon = 1e-6;
 	double beta= 0.5;
-	ofstream file("wyniki_Rosenbrock.csv");
-	file << "x1;x2;X1_min;X2_min;Y;Wywolania\n";
+	matrix s0(2, 1);
+	s0(0, 0) = 0.15;
+	s0(1, 0) = 0.15;
+	//ofstream file("wyniki_Rosenbrock_3.csv");
+	//file << "x1;x2;X1_min;X2_min;Y;Wywolania\n";
 
 	for (int i=0;i<100;++i) {
 		double x0data[2];
@@ -146,18 +149,18 @@ void lab2()
 		// cout <<"X = ("<<  opt1.x(0) <<","<< opt1.x(1) << ")" << endl;
 		// cout <<"Y = " <<  opt1.y << endl;
 		// cout <<"Wywolania funkcji: " << opt1.f_calls << ";" << endl;
-		solution opt2 = Rosen(ff2T,x0, s, alpha,beta, epsilon, 10000);
+		solution opt2 = Rosen(ff2T,x0, s0, alpha,beta, epsilon, 10000);
 		cout << "Rosenbrock" << endl;
 		cout <<"X = ("<<  opt2.x(0) <<","<< opt2.x(1) << ")" << endl;
 		cout <<"Y = " <<  opt2.y << endl;
 		cout <<"Wywolania funkcji: " << opt2.f_calls << ";" << endl;
 
-		file << x0data[0] << ";"
-		 << x0data[1] << ";"
-		 << opt2.x(0) << ";"
-		 << opt2.x(1) << ";"
-		 << opt2.y << ";"
-		 << opt2.f_calls << "\n";
+		// file << x0data[0] << ";"
+		//  << x0data[1] << ";"
+		//  << opt2.x(0) << ";"
+		//  << opt2.x(1) << ";"
+		//  << opt2.y << ";"
+		//  << opt2.f_calls << "\n";
 
 	}
 

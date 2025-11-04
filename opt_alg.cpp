@@ -421,7 +421,7 @@ solution Rosen(matrix(*ff)(matrix, matrix, matrix), matrix x0, matrix s0, double
                         else {
                             // Jeśli wektor jest zerowy, użyj wektora jednostkowego
                             matrix ej(n, 1);
-                            ej(j) = 1.0;
+                            ej(j,0) = 1.0;
                             d_new.set_col(ej, j);
                         }
                     }
