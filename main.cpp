@@ -22,7 +22,9 @@ int main()
 	try
 	{
 
-		lab1();
+		lab2();
+
+
 	}
 	catch (string EX_INFO)
 	{
@@ -43,11 +45,11 @@ void lab0()
     double alpha = 2.0;
     int Nmaxx = 1000;
 
-    solution result = expansion(ff1T, x0, d, alpha, Nmaxx   );
+    //solution result = expansion(ff1T, x0, d, alpha, Nmaxx   );
 
     cout << "Przedzial [a, b]:" << endl;
-    cout << "a = " << result.x(0) << endl;
-    cout << "b = " << result.x(1) << endl;
+    //cout << "a = " << result.x(0) << endl;
+    //cout << "b = " << result.x(1) << endl;
     cout << "Liczba wywolan: " << solution::f_calls << endl;
 
     solution::clear_calls();
