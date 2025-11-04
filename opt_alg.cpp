@@ -244,10 +244,48 @@ solution HJ(matrix(*ff)(matrix, matrix, matrix), matrix x0, double s, double alp
 {
 	try
 	{
+<<<<<<< HEAD
 		solution Xopt;
 
+=======
+		solution Xopt, XB;
+		XB.x = x0;
+>>>>>>> fffd19ad14d5ef37366f89dbf931008366788783
 
-		return Xopt;
+		int n = get_size(XB.x)[0];
+		matrix dirs = ident_mat(n);
+
+		while (s > epsilon) {
+			Xopt = HJ_trial(ff, XB, s, dirs);
+
+			matrix f1 = Xopt.fit_fun(ff);
+			matrix f2 = XB.fit_fun(ff);
+
+			if (m2d(f1) < m2d(f2)) {
+				while (m2d(f1) < m2d(f2)) {
+					matrix xTmp = XB.x;
+					XB.x = Xopt.x;
+					Xopt.x = 2 * XB.x - xTmp;
+
+					Xopt = HJ_trial(ff, Xopt, s, dirs);
+
+					f1 = Xopt.fit_fun(ff);
+					f2 = XB.fit_fun(ff);
+
+					if (solution::f_calls > Nmax)
+						throw string("Error f_calls > Nmax");
+				}
+			}
+			else {
+				s *= alpha;
+			}
+
+			if (solution::f_calls > Nmax)
+				throw string("Error f_calls > Nmax");
+		}
+
+		XB.flag = 1;
+		return XB;
 	}
 	catch (string ex_info)
 	{
@@ -255,12 +293,33 @@ solution HJ(matrix(*ff)(matrix, matrix, matrix), matrix x0, double s, double alp
 	}
 }
 
+
 solution HJ_trial(matrix(*ff)(matrix, matrix, matrix), solution XB, double s, matrix ud1, matrix ud2)
 {
 	try
 	{
-		//Tu wpisz kod funkcji
+		int n = get_size(XB.x)[0];
+		matrix f0 = XB.fit_fun(ff);
 
+		for (int i = 0; i < n; ++i) {
+			matrix ei = get_col(ud1, i); 
+
+			solution Xopt = XB;
+			Xopt.x = XB.x + s * ei;
+			matrix f1 = Xopt.fit_fun(ff);
+			if (m2d(f1) < m2d(f0)) {
+				XB.x = Xopt.x;
+				f0 = f1;
+			}
+			else {
+				Xopt.x = XB.x - s * ei;
+				matrix f3 = Xopt.fit_fun(ff);
+				if (m2d(f3) < m2d(f0)) {
+					XB.x = Xopt.x;
+					f0 = f3;
+				}
+			}
+		}
 		return XB;
 	}
 	catch (string ex_info)
@@ -539,4 +598,5 @@ solution EA(matrix(*ff)(matrix, matrix, matrix), int N, matrix lb, matrix ub, in
 		throw ("solution EA(...):\n" + ex_info);
 	}
 }
+
 

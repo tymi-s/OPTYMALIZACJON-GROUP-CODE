@@ -126,7 +126,14 @@ void lab1()
 
 void lab2()
 {
+	double x0data[2] = { -1.0, 1.0 };
+	matrix x0(2,x0data);
+	double s = 0.5, alpha = 0.5, epsilon = 1e-6;
+	
+	solution::clear_calls;
+	solution opt = HJ(ff2T, x0, s, alpha, epsilon, 10000);
 
+	cout << opt << endl;
 }
 
 void lab3()
@@ -148,4 +155,5 @@ void lab6()
 {
 
 }
+
 
