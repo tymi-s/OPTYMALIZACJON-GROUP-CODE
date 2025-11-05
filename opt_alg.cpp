@@ -327,47 +327,41 @@ solution Rosen(matrix(*ff)(matrix, matrix, matrix), matrix x0, matrix s0, double
 {
 	try
 	{
+		solution::clear_calls();
 		solution Xopt;
 		int n = get_len(x0);
 
 		int i = 0;
-		matrix d = ident_mat(n);      
-		matrix lambda(n, 1);          
-		matrix p(n, 1);               
-		matrix xB = x0;               
-		matrix s = s0;                
-		matrix x_curr = x0;           
-
-		solution XB_sol(xB);
-		XB_sol.fit_fun(ff, ud1, ud2);
-		double fB = m2d(XB_sol.y);
+		matrix d = ident_mat(n);
+		matrix lambda(n, 1);
+		matrix p(n, 1);
+		matrix s = s0;
+		matrix xB = x0;
 
 		while (true) {
-
 			for (int j = 0; j < n; j++) {
 				matrix dj = d[j];  
 
-				matrix x_trial = xB + s(j) * dj;
-				solution X_trial(x_trial);
+				solution X_trial(xB + s(j) * dj);
 				X_trial.fit_fun(ff, ud1, ud2);
 				double f_trial = m2d(X_trial.y);
 
+				solution XB_sol(xB);
+				XB_sol.fit_fun(ff, ud1, ud2);
+				double fB = m2d(XB_sol.y);
+
 				if (f_trial < fB) {
-					xB = x_trial;           
-					fB = f_trial;
-					lambda(j) = lambda(j) + s(j);  
-					s(j) = alpha * s(j);    
+					xB = xB + s(j) * dj;    
+					lambda(j) = lambda(j) + s(j);
+					s(j) = alpha * s(j);
 				}
 				else {
-					s(j) = -beta * s(j);    
-					p(j) = p(j) + 1;       
+					s(j) = -beta * s(j);
+					p(j) = p(j) + 1;
 				}
 			}
 
-
 			i = i + 1;
-
-			x_curr = xB;
 
 			bool all_lambda_nonzero = true;
 			bool all_p_nonzero = true;
@@ -377,66 +371,92 @@ solution Rosen(matrix(*ff)(matrix, matrix, matrix), matrix x0, matrix s0, double
 			}
 
 			if (all_lambda_nonzero && all_p_nonzero) {
-				matrix d_new = ident_mat(n);
+				matrix Q(n, n);
 
-				matrix v1(n, 1);
-				for (int j = 0; j < n; j++) {
-					v1 = v1 + lambda(j) * d[j];
+				for (int row = 0; row < n; row++) {
+					for (int col = 0; col < n; col++) {
+						if (col == 0) {
+							Q(row, col) = lambda(row);
+						}
+						else {
+							Q(row, col) = lambda(row);
+						}
+					}
 				}
 
+				matrix Lambda_matrix(n, n);
+				for (int row = 0; row < n; row++) {
+					for (int col = 0; col < n; col++) {
+						if (col <= row) {
+							Lambda_matrix(row, col) = lambda(row);
+						}
+						else {
+							Lambda_matrix(row, col) = 0.0;
+						}
+					}
+				}
+
+				Q = d * Lambda_matrix;
+
+				matrix d_new = ident_mat(n);
+
+				matrix v1 = get_col(Q, 0);
 				double norm_v1 = norm(v1);
 				if (norm_v1 > epsilon) {
 					d_new.set_col(v1 * (1.0 / norm_v1), 0);
-
-					for (int j = 1; j < n; j++) {
-						matrix vj = d[j];  
-
-						for (int k = 0; k < j; k++) {
-							matrix dk = d_new[k];
-							double proj = m2d(trans(vj) * dk);
-							vj = vj - proj * dk;
-						}
-
-						double norm_vj = norm(vj);
-						if (norm_vj > epsilon) {
-							d_new.set_col(vj * (1.0 / norm_vj), j);
-						}
-						else {
-							matrix ej(n, 1);
-							ej(j, 0) = 1.0;
-							d_new.set_col(ej, j);
-						}
-					}
-
-					d = d_new; 
+				}
+				else {
+					matrix e1(n, 1);
+					e1(0) = 1.0;
+					d_new.set_col(e1, 0);
 				}
 
+				for (int j = 1; j < n; j++) {
+					matrix vj = get_col(Q, j);
+
+					for (int k = 0; k < j; k++) {
+						matrix dk = get_col(d_new, k);
+						double proj = m2d(trans(vj) * dk);
+						vj = vj - proj * dk;
+					}
+
+					double norm_vj = norm(vj);
+					if (norm_vj > epsilon) {
+						d_new.set_col(vj * (1.0 / norm_vj), j);
+					}
+					else {
+						matrix ej(n, 1);
+						ej(j) = 1.0;
+						d_new.set_col(ej, j);
+					}
+				}
+
+				d = d_new;
+
 				lambda = matrix(n, 1);
-
 				p = matrix(n, 1);
-
 				s = s0;
 			}
 
-			if (solution::f_calls >= Nmax) {
-				Xopt.x = x_curr;
-				Xopt.y = fB;
-				Xopt.flag = 0;  
+			if (solution::f_calls > Nmax) {
+				Xopt.x = xB;
+				Xopt.fit_fun(ff, ud1, ud2);
+				Xopt.flag = 0;
 				return Xopt;
 			}
 
 			double max_step = 0;
 			for (int j = 0; j < n; j++) {
-				double abs_s = s(j) >= 0 ? s(j) : -s(j); 
+				double abs_s = s(j) >= 0 ? s(j) : -s(j);
 				if (abs_s > max_step) {
 					max_step = abs_s;
 				}
 			}
 
 			if (max_step < epsilon) {
-				Xopt.x = x_curr;
+				Xopt.x = xB;
 				Xopt.fit_fun(ff, ud1, ud2);
-				Xopt.flag = 1;  
+				Xopt.flag = 1;
 				return Xopt;
 			}
 		}
@@ -568,6 +588,7 @@ solution EA(matrix(*ff)(matrix, matrix, matrix), int N, matrix lb, matrix ub, in
 		throw ("solution EA(...):\n" + ex_info);
 	}
 }
+
 
 
 
