@@ -326,152 +326,127 @@ solution HJ_trial(matrix(*ff)(matrix, matrix, matrix), solution XB, double s, ma
 solution Rosen(matrix(*ff)(matrix, matrix, matrix), matrix x0, matrix s0, double alpha, double beta, double epsilon, int Nmax, matrix ud1, matrix ud2)
 {
 	try
-    {
-        solution Xopt;
-        int n = get_len(x0);
+	{
+		solution Xopt;
+		int n = get_len(x0);
 
-        // 1. INICJALIZACJA 
-        int i = 0;
-        matrix d = ident_mat(n);      // dj(0) = ej - kierunki bazowe
-        matrix lambda(n, 1);          // λj(0) = 0
-        matrix p(n, 1);               // pj(0) = 0
-        matrix xB = x0;               // xB = x(0)
-        matrix s = s0;                // Wektor kroków
-        matrix x_curr = x0;           // x(i) - aktualny punkt
+		int i = 0;
+		matrix d = ident_mat(n);      
+		matrix lambda(n, 1);          
+		matrix p(n, 1);               
+		matrix xB = x0;               
+		matrix s = s0;                
+		matrix x_curr = x0;           
 
-        // Oblicz f(xB) na starcie
-        solution XB_sol(xB);
-        XB_sol.fit_fun(ff, ud1, ud2);
-        double fB = m2d(XB_sol.y);
+		solution XB_sol(xB);
+		XB_sol.fit_fun(ff, ud1, ud2);
+		double fB = m2d(XB_sol.y);
 
-        // 2. GŁÓWNA PĘTLA (linia 6: repeat)
-        while(true) {
+		while (true) {
 
-            // 3. FAZA EKSPLORACJI (linie 7-16: for j = 1 to n)
-            for(int j = 0; j < n; j++) {
-                matrix dj = d[j];  // j-ty kierunek
+			for (int j = 0; j < n; j++) {
+				matrix dj = d[j];  
 
-                // Oblicz f(xB + sj(i)·dj(i))
-                matrix x_trial = xB + s(j) * dj;
-                solution X_trial(x_trial);
-                X_trial.fit_fun(ff, ud1, ud2);
-                double f_trial = m2d(X_trial.y);
+				matrix x_trial = xB + s(j) * dj;
+				solution X_trial(x_trial);
+				X_trial.fit_fun(ff, ud1, ud2);
+				double f_trial = m2d(X_trial.y);
 
-                // Linia 8: if f(xB + sj(i)·dj(i)) < f(xB) then
-                if(f_trial < fB) {
-                    // SUKCES (linie 9-11)
-                    xB = x_trial;           // Linia 9: xB = xB + sj(i)·dj(i)
-                    fB = f_trial;
-                    lambda(j) = lambda(j) + s(j);  // Linia 10: λj(i+1) = λj(i) + sj(i)
-                    s(j) = alpha * s(j);    // Linia 11: sj(i+1) = α·sj(i)
-                }
-                else {
-                    // PORAŻKA (linie 12-14)
-                    s(j) = -beta * s(j);    // Linia 13: sj(i+1) = -β·sj(i)
-                    p(j) = p(j) + 1;        // Linia 14: pj(i+1) = pj(i) + 1
-                }
-            }
+				if (f_trial < fB) {
+					xB = x_trial;           
+					fB = f_trial;
+					lambda(j) = lambda(j) + s(j);  
+					s(j) = alpha * s(j);    
+				}
+				else {
+					s(j) = -beta * s(j);    
+					p(j) = p(j) + 1;       
+				}
+			}
 
-            // Linia 17: i = i + 1
-            i = i + 1;
 
-            // Linia 18: x(i) = xB
-            x_curr = xB;
+			i = i + 1;
 
-            // Linia 19: if λj(i) ≠ 0 and pj(i) ≠ 0 dla wszystkich j
-            bool all_lambda_nonzero = true;
-            bool all_p_nonzero = true;
-            for(int j = 0; j < n; j++) {
-                if(lambda(j) == 0) all_lambda_nonzero = false;
-                if(p(j) == 0) all_p_nonzero = false;
-            }
+			x_curr = xB;
 
-            // Linia 19-24: Zmiana bazy kierunków
-            if(all_lambda_nonzero && all_p_nonzero) {
-                // Linia 20: Zmiana bazy kierunków (Gram-Schmidt)
-                matrix d_new = ident_mat(n);
+			bool all_lambda_nonzero = true;
+			bool all_p_nonzero = true;
+			for (int j = 0; j < n; j++) {
+				if (lambda(j) == 0) all_lambda_nonzero = false;
+				if (p(j) == 0) all_p_nonzero = false;
+			}
 
-                // Pierwszy nowy kierunek: suma ważonych starych kierunków
-                matrix v1(n, 1);
-                for(int j = 0; j < n; j++) {
-                    v1 = v1 + lambda(j) * d[j];
-                }
+			if (all_lambda_nonzero && all_p_nonzero) {
+				matrix d_new = ident_mat(n);
 
-                // Normalizacja pierwszego kierunku
-                double norm_v1 = norm(v1);
-                if(norm_v1 > epsilon) {
-                    d_new.set_col(v1 * (1.0 / norm_v1), 0);
+				matrix v1(n, 1);
+				for (int j = 0; j < n; j++) {
+					v1 = v1 + lambda(j) * d[j];
+				}
 
-                    // Ortogonalizacja Grama-Schmidta dla pozostałych kierunków
-                    for(int j = 1; j < n; j++) {
-                        matrix vj = d[j];  // Stary kierunek
+				double norm_v1 = norm(v1);
+				if (norm_v1 > epsilon) {
+					d_new.set_col(v1 * (1.0 / norm_v1), 0);
 
-                        // Usuń składowe równoległe do poprzednich nowych kierunków
-                        for(int k = 0; k < j; k++) {
-                            matrix dk = d_new[k];
-                            double proj = m2d(trans(vj) * dk);
-                            vj = vj - proj * dk;
-                        }
+					for (int j = 1; j < n; j++) {
+						matrix vj = d[j];  
 
-                        // Normalizacja
-                        double norm_vj = norm(vj);
-                        if(norm_vj > epsilon) {
-                            d_new.set_col(vj * (1.0 / norm_vj), j);
-                        }
-                        else {
-                            // Jeśli wektor jest zerowy, użyj wektora jednostkowego
-                            matrix ej(n, 1);
-                            ej(j,0) = 1.0;
-                            d_new.set_col(ej, j);
-                        }
-                    }
+						for (int k = 0; k < j; k++) {
+							matrix dk = d_new[k];
+							double proj = m2d(trans(vj) * dk);
+							vj = vj - proj * dk;
+						}
 
-                    d = d_new;  // Aktualizuj bazę kierunków
-                }
+						double norm_vj = norm(vj);
+						if (norm_vj > epsilon) {
+							d_new.set_col(vj * (1.0 / norm_vj), j);
+						}
+						else {
+							matrix ej(n, 1);
+							ej(j, 0) = 1.0;
+							d_new.set_col(ej, j);
+						}
+					}
 
-                // Linia 21: λj(i) = 0
-                lambda = matrix(n, 1);
+					d = d_new; 
+				}
 
-                // Linia 22: pj(i) = 0
-                p = matrix(n, 1);
+				lambda = matrix(n, 1);
 
-                // Linia 23: sj(i) = sj(0)
-                s = s0;
-            }
+				p = matrix(n, 1);
 
-            // Linia 25-27: Sprawdź limit wywołań funkcji
-            if(solution::f_calls >= Nmax) {
-                Xopt.x = x_curr;
-                Xopt.y = fB;
-                Xopt.flag = 0;  // Błąd - przekroczono limit
-                return Xopt;
-            }
+				s = s0;
+			}
 
-            // Linia 28: until maxj(|sj(i)|) < ε
-            double max_step = 0;
-            for(int j = 0; j < n; j++) {
-                double abs_s = s(j) >= 0 ? s(j) : -s(j);  // |sj(i)|
-                if(abs_s > max_step) {
-                    max_step = abs_s;
-                }
-            }
+			if (solution::f_calls >= Nmax) {
+				Xopt.x = x_curr;
+				Xopt.y = fB;
+				Xopt.flag = 0;  
+				return Xopt;
+			}
 
-            if(max_step < epsilon) {
-                // Sukces! Osiągnięto dokładność
-                Xopt.x = x_curr;
-                Xopt.fit_fun(ff, ud1, ud2);
-                Xopt.flag = 1;  // Sukces
-                return Xopt;
-            }
-        }
+			double max_step = 0;
+			for (int j = 0; j < n; j++) {
+				double abs_s = s(j) >= 0 ? s(j) : -s(j); 
+				if (abs_s > max_step) {
+					max_step = abs_s;
+				}
+			}
 
-        // Ten kod nigdy nie powinien być osiągnięty
-        return Xopt;
-    }
-    catch (string ex_info)
-    {
-        throw ("solution Rosen(...):\n" + ex_info);
-    }
+			if (max_step < epsilon) {
+				Xopt.x = x_curr;
+				Xopt.fit_fun(ff, ud1, ud2);
+				Xopt.flag = 1;  
+				return Xopt;
+			}
+		}
+
+		return Xopt;
+	}
+	catch (string ex_info)
+	{
+		throw ("solution Rosen(...):\n" + ex_info);
+	}
 }
 
 solution pen(matrix(*ff)(matrix, matrix, matrix), matrix x0, double c, double dc, double epsilon, int Nmax, matrix ud1, matrix ud2)
@@ -593,5 +568,6 @@ solution EA(matrix(*ff)(matrix, matrix, matrix), int N, matrix lb, matrix ub, in
 		throw ("solution EA(...):\n" + ex_info);
 	}
 }
+
 
 
