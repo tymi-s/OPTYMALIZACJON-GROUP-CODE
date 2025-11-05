@@ -64,46 +64,41 @@ matrix df(double t, matrix Y, matrix ud1, matrix ud2) {
     double k1 = ud1(0);
     double k2 = ud1(1);
 
-    double l = 2.0;           
-    double mr = 1.0;          
-    double mc = 5.0;          
-    double b = 0.25;          
-    double alpha_ref = M_PI;  
-    double omega_ref = 0.0;   
+    double l = 2.0;
+    double mr = 1.0;
+    double mc = 5.0;
+    double b = 0.25;
+    double alpha_ref = 3.14159265358979323846;
+    double omega_ref = 0.0;
 
     double I = (1.0 / 3.0) * mr * l * l + mc * l * l;
-
     double M = k1 * (alpha_ref - alpha) + k2 * (omega_ref - omega);
 
     matrix dY(2, 1);
-    dY(0) = omega;                           
-    dY(1) = (M - b * omega) / I;            
+    dY(0) = omega;
+    dY(1) = (M - b * omega) / I;
 
     return dY;
 }
 
 
 matrix ff2R(matrix x, matrix ud1, matrix ud2) {
-
     double k1 = x(0);
     double k2 = x(1);
-
     double t0 = 0.0;
     double tend = 100.0;
     double dt = 0.1;
-
     double l = 2.0;
     double mr = 1.0;
     double mc = 5.0;
     double b = 0.25;
-    double alpha_ref = M_PI;
+    double alpha_ref = 3.14159265358979323846;
     double omega_ref = 0.0;
-
     double I = (1.0 / 3.0) * mr * l * l + mc * l * l;
 
     matrix Y0(2, 1);
-    Y0(0) = 0.0;  
-    Y0(1) = 0.0;  
+    Y0(0) = 0.0;
+    Y0(1) = 0.0;
 
     matrix k_params(2, 1);
     k_params(0) = k1;
@@ -117,17 +112,16 @@ matrix ff2R(matrix x, matrix ud1, matrix ud2) {
     for (int i = 0; i < N; i++) {
         double alpha = S[1](i, 0);
         double omega = S[1](i, 1);
-
         double M = k1 * (alpha_ref - alpha) + k2 * (omega_ref - omega);
 
-        double integrand = 10.0 * pow(alpha_ref - alpha, 2) +
-            pow(omega_ref - omega, 2) +
-            pow(M, 2);
+        double integrand = 10.0 * (alpha_ref - alpha) * (alpha_ref - alpha) +
+            (omega_ref - omega) * (omega_ref - omega) +
+            M * M;
 
         Q += integrand * dt;
     }
 
     delete[] S;
-
     return Q;
 }
+
