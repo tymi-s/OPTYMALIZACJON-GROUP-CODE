@@ -127,7 +127,7 @@ void lab1()
 
 void lab2()
 {
-	srand(time(NULL));
+	/*srand(time(NULL));
 
 	double s = 0.15, alpha = 0.5, epsilon = 1e-6;
 	double beta= 0.5;
@@ -162,6 +162,75 @@ void lab2()
 		//  << opt2.y << ";"
 		//  << opt2.f_calls << "\n";
 
+	}*/
+
+	solution::clear_calls();
+
+	try {
+		cout << "=== PROBLEM RZECZYWISTY - OPTYMALIZACJA REGULATORA ===" << endl;
+
+		double s_hj = 1.0;          
+		double alpha_hj = 0.5;       
+		double epsilon = 1e-4;       
+		int Nmax = 10000;           
+
+		matrix s0_rosen(2, 1);
+		s0_rosen(0) = 1.0;          
+		s0_rosen(1) = 1.0;          
+		double alpha_rosen = 2.0;   
+		double beta_rosen = 0.5;    
+
+		matrix x0(2, 1);
+		x0(0) = 10.0;  
+		x0(1) = 10.0;  
+
+		cout << "\nPunkt startowy: k1 = " << x0(0) << ", k2 = " << x0(1) << endl;
+
+		cout << "\n--- Weryfikacja dla k1=5, k2=5 ---" << endl;
+		matrix x_test(2, 1);
+		x_test(0) = 5.0;
+		x_test(1) = 5.0;
+		matrix Q_test = ff2R(x_test, NAN, NAN);
+		cout << "Q(5, 5) = " << Q_test(0) << " (oczekiwane: ~775.229)" << endl;
+
+		cout << "\n--- Metoda Hooke'a-Jeevesa ---" << endl;
+		solution Xopt_HJ = HJ(ff2R, x0, s_hj, alpha_hj, epsilon, Nmax);
+		cout << "Wynik: " << Xopt_HJ << endl;
+
+		cout << "\n--- Metoda Rosenbrocka ---" << endl;
+		solution Xopt_Rosen = Rosen(ff2R, x0, s0_rosen, alpha_rosen, beta_rosen, epsilon, Nmax);
+		cout << "Wynik: " << Xopt_Rosen << endl;
+
+		cout << "\n--- Symulacja z optymalnymi parametrami (HJ) ---" << endl;
+		double k1_opt = Xopt_HJ.x(0);
+		double k2_opt = Xopt_HJ.x(1);
+
+		matrix k_opt(2, 1);
+		k_opt(0) = k1_opt;
+		k_opt(1) = k2_opt;
+
+		matrix Y0(2, 1);
+		Y0(0) = 0.0;
+		Y0(1) = 0.0;
+
+		matrix* S = solve_ode(df, 0.0, 0.1, 100.0, Y0, k_opt, NAN);
+
+		ofstream file("symulacja.csv");
+		file << "t;alpha;omega" << endl;
+
+		int N = get_size(S[0])[0];
+		for (int i = 0; i < N; i++) {
+			file << S[0](i) << ";" << S[1](i, 0) << ";" << S[1](i, 1) << endl;
+		}
+		file.close();
+
+		cout << "Wyniki symulacji zapisane do pliku symulacja.csv" << endl;
+
+		delete[] S;
+
+	}
+	catch (string ex_info) {
+		cout << ex_info << endl;
 	}
 
 }
@@ -185,5 +254,6 @@ void lab6()
 {
 
 }
+
 
 
