@@ -56,3 +56,72 @@ matrix ff2T(matrix X, matrix ud1, matrix ud2)
 		throw ("matrix ff2T(...):\n" + ex_info);
 	}
 }
+
+matrix df(double t, matrix Y, matrix ud1, matrix ud2) {
+    double alpha = Y(0);
+    double omega = Y(1);
+
+    double k1 = ud1(0);
+    double k2 = ud1(1);
+
+    double l = 2.0;
+    double mr = 1.0;
+    double mc = 5.0;
+    double b = 0.25;
+    double alpha_ref = 3.14159265358979323846;
+    double omega_ref = 0.0;
+
+    double I = (1.0 / 3.0) * mr * l * l + mc * l * l;
+    double M = k1 * (alpha_ref - alpha) + k2 * (omega_ref - omega);
+
+    matrix dY(2, 1);
+    dY(0) = omega;
+    dY(1) = (M - b * omega) / I;
+
+    return dY;
+}
+
+
+matrix ff2R(matrix x, matrix ud1, matrix ud2) {
+    double k1 = x(0);
+    double k2 = x(1);
+    double t0 = 0.0;
+    double tend = 100.0;
+    double dt = 0.1;
+    double l = 2.0;
+    double mr = 1.0;
+    double mc = 5.0;
+    double b = 0.25;
+    double alpha_ref = 3.14159265358979323846;
+    double omega_ref = 0.0;
+    double I = (1.0 / 3.0) * mr * l * l + mc * l * l;
+
+    matrix Y0(2, 1);
+    Y0(0) = 0.0;
+    Y0(1) = 0.0;
+
+    matrix k_params(2, 1);
+    k_params(0) = k1;
+    k_params(1) = k2;
+
+    matrix* S = solve_ode(df, t0, dt, tend, Y0, k_params, ud2);
+
+    double Q = 0.0;
+    int N = get_size(S[0])[0];
+
+    for (int i = 0; i < N; i++) {
+        double alpha = S[1](i, 0);
+        double omega = S[1](i, 1);
+        double M = k1 * (alpha_ref - alpha) + k2 * (omega_ref - omega);
+
+        double integrand = 10.0 * (alpha_ref - alpha) * (alpha_ref - alpha) +
+            (omega_ref - omega) * (omega_ref - omega) +
+            M * M;
+
+        Q += integrand * dt;
+    }
+
+    delete[] S;
+    return Q;
+}
+
