@@ -504,10 +504,52 @@ solution Rosen(matrix(*ff)(matrix, matrix, matrix), matrix x0, matrix s0, double
 solution pen(matrix(*ff)(matrix, matrix, matrix), matrix x0, double c, double dc, double epsilon, int Nmax, matrix ud1, matrix ud2)
 {
 	try {
-		solution Xopt;
-		//Tu wpisz kod funkcji
+        solution Xopt;
+        int i =0;
+        solution x_prev, x_curr;
+        double c_current = c;
 
-		return Xopt;
+        while(true){
+            i++;
+
+            matrix params = ud1;
+
+            if( get_size(params)[0] == 0 || get_size(params)[1]==0){
+                params = matrix(1,1);
+            }
+            params(0) = c_current;
+            double s = 0.5;           // długość boku sympleksu początkowego
+            double alpha = 1.0;       // współczynnik odbicia
+            double beta = 0.5;        // współczynnik zawężenia
+            double gamma = 2.0;       // współczynnik ekspansji
+            double delta = 0.5;       // współczynnik redukcji
+
+            x_curr = sym_NM(ff, x_prev.x, s, alpha, beta, gamma, delta, epsilon, Nmax, params, ud2);
+            Xopt = x_curr;
+
+            if(solution::f_calls > Nmax){
+                Xopt.flag = 0;
+                return Xopt;
+
+            }
+
+            // warunek stopu:
+            double distance = norm(x_curr.x - x_prev.x);
+            if(distance < epsilon){
+                Xopt.flag =1;
+                return Xopt;
+            }
+
+            // aktualizacja współczynnika kary
+            c_current = dc * c_current;
+
+            //przejscie do nastepnej interacji
+            x_prev= x_curr;
+
+        }
+        return Xopt;
+
+
 	}
 	catch (string ex_info)
 	{

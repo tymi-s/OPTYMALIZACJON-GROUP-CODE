@@ -18,12 +18,13 @@ void lab4();
 void lab5();
 void lab6();
 
+                                                                                    
 int main()
 {
 	try
 	{
 
-		lab2();
+		lab3();
 
 
 	}
@@ -88,8 +89,7 @@ void lab0()
 }
 
 
-void lab1()
-{
+void lab1(){
 	//Funkcja testowa
 	srand(time(NULL));
 	double epsilon = 1e-8;
@@ -127,49 +127,49 @@ void lab1()
 
 void lab2()
 {
-//	srand(time(NULL));
-//
-//	double s = 0.08, alpha = 0.5, epsilon = 1e-6;
-//	double beta = 0.5;
-//	matrix s0(2, 1);
-//	s0(0, 0) = 0.08;
-//	s0(1, 0) = 0.08;
-//
-//	// Stały punkt startowy dla wizualizacji ścieżki
-//	double x0data[2];
-//	x0data[0] = 0.5;  // Możesz zmienić na inne wartości
-//	x0data[1] = 0.5;
-//	matrix x0(2, x0data);
-//
-//	cout << "Punkt startowy: (" << x0data[0] << ", " << x0data[1] << ")" << endl << endl;
-//
-//	// Hook-Jeeves
-//	cout << "=== Hook-Jeeves ===" << endl;
-//	ofstream file_HJ("sciezka_HJ.csv");
-//	file_HJ << "X1;X2;Y\n";
-//	solution::clear_calls();
-//	solution opt1 = HJ(ff2T, x0, s, alpha, epsilon, 10000);
-//	file_HJ.close();
-//
-//	cout << "Wynik koncowy:" << endl;
-//	cout << "  X = (" << opt1.x(0) << ", " << opt1.x(1) << ")" << endl;
-//	cout << "  Y = " << opt1.y << endl;
-//	cout << "  Wywolania funkcji: " << opt1.f_calls << endl << endl;
-//
-//	// Rosenbrock
-//	cout << "=== Rosenbrock ===" << endl;
-//	ofstream file_Rosen("sciezka_Rosen.csv");
-//	file_Rosen << "X1;X2;Y\n";
-//	solution::clear_calls();
-//	solution opt2 = Rosen(ff2T, x0, s0, alpha, beta, epsilon, 10000);
-//	file_Rosen.close();
-//
-//	cout << "Wynik koncowy:" << endl;
-//	cout << "  X = (" << opt2.x(0) << ", " << opt2.x(1) << ")" << endl;
-//	cout << "  Y = " << opt2.y << endl;
-//	cout << "  Wywolania funkcji: " << opt2.f_calls << endl << endl;
-//
-//	cout << "Sciezki zapisane do plikow: sciezka_HJ.csv i sciezka_Rosen.csv" << endl;
+	srand(time(NULL));
+
+	double s = 0.08, alpha = 0.5, epsilon = 1e-6;
+	double beta = 0.5;
+	matrix s0(2, 1);
+	s0(0, 0) = 0.08;
+	s0(1, 0) = 0.08;
+
+	// Stały punkt startowy dla wizualizacji ścieżki
+	double x0data[2];
+	x0data[0] = 0.5;  // Możesz zmienić na inne wartości
+	x0data[1] = 0.5;
+	matrix x0(2, x0data);
+
+	cout << "Punkt startowy: (" << x0data[0] << ", " << x0data[1] << ")" << endl << endl;
+
+	// Hook-Jeeves
+	cout << "=== Hook-Jeeves ===" << endl;
+	ofstream file_HJ("sciezka_HJ.csv");
+	file_HJ << "X1;X2;Y\n";
+	solution::clear_calls();
+	solution opt1 = HJ(ff2T, x0, s, alpha, epsilon, 10000);
+	file_HJ.close();
+
+	cout << "Wynik koncowy:" << endl;
+	cout << "  X = (" << opt1.x(0) << ", " << opt1.x(1) << ")" << endl;
+	cout << "  Y = " << opt1.y << endl;
+	cout << "  Wywolania funkcji: " << opt1.f_calls << endl << endl;
+
+	// Rosenbrock
+	cout << "=== Rosenbrock ===" << endl;
+	ofstream file_Rosen("sciezka_Rosen.csv");
+	file_Rosen << "X1;X2;Y\n";
+	solution::clear_calls();
+	solution opt2 = Rosen(ff2T, x0, s0, alpha, beta, epsilon, 10000);
+	file_Rosen.close();
+
+	cout << "Wynik koncowy:" << endl;
+	cout << "  X = (" << opt2.x(0) << ", " << opt2.x(1) << ")" << endl;
+	cout << "  Y = " << opt2.y << endl;
+	cout << "  Wywolania funkcji: " << opt2.f_calls << endl << endl;
+
+	cout << "Sciezki zapisane do plikow: sciezka_HJ.csv i sciezka_Rosen.csv" << endl;
 }
 
 void lab3()
