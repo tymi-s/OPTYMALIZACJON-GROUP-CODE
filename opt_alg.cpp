@@ -562,7 +562,133 @@ solution sym_NM(matrix(*ff)(matrix, matrix, matrix), matrix x0, double s, double
 	try
 	{
 		solution Xopt;
-		//Tu wpisz kod funkcji
+
+		int n = get_len(x0); 
+		int N_v = n + 1;     
+
+		vector<solution> P(N_v);
+
+		P[0].x = x0;
+		P[0].fit_fun(ff, ud1, ud2); 
+
+		for (int i = 1; i <= n; ++i)
+		{
+			matrix ei(n, 1, 0.0);
+			ei(i - 1, 0) = 1.0;
+
+			P[i].x = P[0].x + matrix(s) * ei;
+
+			P[i].fit_fun(ff, ud1, ud2);
+		}
+
+		do
+		{
+			int i_min = 0;
+			int i_max = 0;
+
+			for (int i = 1; i < N_v; ++i)
+			{
+				if (m2d(P[i].y) < m2d(P[i_min].y))
+					i_min = i;
+				if (m2d(P[i].y) > m2d(P[i_max].y))
+					i_max = i;
+			}
+
+			solution p_min = P[i_min];
+			solution p_max = P[i_max];
+
+			matrix sum_p(n, 1, 0.0);
+			for (int i = 0; i < N_v; ++i)
+			{
+				if (i != i_max)
+					sum_p = sum_p + P[i].x;
+			}
+			matrix p_bar_x = matrix(1.0 / n) * sum_p;
+
+			solution p_odb;
+			p_odb.x = p_bar_x + matrix(alpha) * (p_bar_x - p_max.x);
+			p_odb.fit_fun(ff, ud1, ud2);
+
+			double f_odb = m2d(p_odb.y);
+			double f_min = m2d(p_min.y);
+			double f_max = m2d(p_max.y);
+
+			if (f_odb < f_min)
+			{
+				solution p_e;
+				p_e.x = p_bar_x + matrix(gamma) * (p_odb.x - p_bar_x);
+				p_e.fit_fun(ff, ud1, ud2);
+
+				if (m2d(p_e.y) < f_odb)
+				{
+					P[i_max] = p_e; 
+				}
+				else
+				{
+					P[i_max] = p_odb; 
+				}
+			}
+			else 
+			{
+				if (f_min <= f_odb && f_odb < f_max)
+				{
+					P[i_max] = p_odb; 
+				}
+				else 
+				{
+					solution p_z;
+					p_z.x = p_bar_x + matrix(beta) * (p_max.x - p_bar_x);
+					p_z.fit_fun(ff, ud1, ud2);
+
+					if (m2d(p_z.y) >= f_max)
+					{
+						for (int i = 0; i < N_v; ++i)
+						{
+							if (i != i_min)
+							{
+								P[i].x = matrix(delta) * (P[i].x + P[i_min].x);
+								P[i].fit_fun(ff, ud1, ud2);
+							}
+						}
+					}
+					else 
+					{
+						P[i_max] = p_z; 
+					}
+				}
+			}
+
+			if (solution::f_calls > Nmax)
+			{
+				Xopt = P[i_min]; 
+				Xopt.flag = 1;   
+				return Xopt;
+			}
+
+			i_min = 0;
+			for (int i = 1; i < N_v; ++i)
+			{
+				if (m2d(P[i].y) < m2d(P[i_min].y))
+					i_min = i;
+			}
+			p_min = P[i_min];
+
+			double max_dist = 0.0;
+			for (int i = 0; i < N_v; ++i)
+			{
+				double d = norm(P[i].x - p_min.x);
+				if (d > max_dist)
+					max_dist = d;
+			}
+
+			if (max_dist < epsilon)
+			{
+				Xopt = p_min;
+				Xopt.flag = 0; 
+				return Xopt; 
+			}
+
+		} while (true); 
 
 		return Xopt;
 	}
@@ -662,6 +788,7 @@ solution EA(matrix(*ff)(matrix, matrix, matrix), int N, matrix lb, matrix ub, in
 		throw ("solution EA(...):\n" + ex_info);
 	}
 }
+
 
 
 

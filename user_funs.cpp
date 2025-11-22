@@ -125,3 +125,20 @@ matrix ff2R(matrix x, matrix ud1, matrix ud2) {
     return Q;
 }
 
+matrix ff3T(matrix x, matrix ud1, matrix ud2) {
+
+	double x1 = m2d(x(0, 0));
+	double x2 = m2d(x(1, 0));
+
+	return (sin(M_PI*sqrt(pow(x1/M_PI,2)+pow(x2/M_PI,2))))/(M_PI(sqrt(pow(x1/M_PI,2)+pow(x2/M_PI,2))));
+
+}
+
+matrix ff3T(matrix x, matrix ud1, matrix ud2) {
+    double x1 = m2d(x(0, 0));
+    double x2 = m2d(x(1, 0));
+
+    double y = sin(M_PI * sqrt(pow(x1 / M_PI, 2) + pow(x2 / M_PI, 2)) / M_PI * sqrt(pow(x1 / M_PI, 2) + pow(x2 / M_PI, 2)));
+
+    return matrix(1, 1, y);
+}
