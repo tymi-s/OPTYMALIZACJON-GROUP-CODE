@@ -10,6 +10,7 @@ Data ostatniej modyfikacji: 30.09.2025
 #include"opt_alg.h"
 #include <math.h>
 #include "user_funs.h"
+
 void lab0();
 void lab1();
 void lab2();
@@ -21,10 +22,12 @@ void lab6();
                                                                                     
 int main()
 {
+
+
 	try
 	{
 
-		lab3();
+		lab4();
 
 
 	}
@@ -174,7 +177,152 @@ void lab2()
 
 void lab3()
 {
+    ////////////////////////////////////////////// PROBLEM RZECZYWISTY ///////////////////////////////////////
 
+    /// parametry fizyczne:
+    double masa  = 0.6;
+    double promien = 0.12;
+    double g = 9.81;
+    double wspolczynnik_oporu = 0.47;
+    double gestosc_powietrza = 1.2;
+
+    /// parametry optymalizacji:
+    double epsilon = 1e-4;
+    int Nmax = 50000;
+
+    double c = 2000.0;
+    double dc = 10.0;
+
+
+    matrix x0(2, 1);
+    x0(0) = 5.0;
+    x0(1) = 10.0;
+ //   x0(0) = 0.0;
+ //   x0(1) = 45.0;
+    /// Przygotowanie parametrdla funkcji celu
+    matrix ud1(5, 1);  // parametry fizyczne (bez wspÃ³Å‚czynnika kary)
+    ud1(0) = masa;
+    ud1(1) = promien;
+    ud1(2) = wspolczynnik_oporu;
+    ud1(3) = gestosc_powietrza;
+    ud1(4) = g;
+
+    matrix ud2(1, 1, 0.0);  // Pusta macierz
+
+
+        // TEST WERYFIKACYJNY Z INSTRUKCJI
+    cout << "=== TEST WERYFIKACYJNY MODELU ===" << endl;
+
+    matrix x_test(2, 1);
+    x_test(0) = 5.0;   // v0x
+    x_test(1) = 10.0;  // omega
+
+    matrix ud_test(5, 1);
+    ud_test(0) = 0.6;    // masa
+    ud_test(1) = 0.12;   // promien
+    ud_test(2) = 0.47;   // C
+    ud_test(3) = 1.2;    // rho
+    ud_test(4) = 9.81;   // g
+
+    matrix result_test = ff3R_base(x_test, ud_test, matrix(1,1,0.0));
+
+    cout << "Dla v0x=5, omega=10:" << endl;
+    cout << "  x_end = " << result_test(0) << " m (powinno ~41.41)" << endl;
+    cout << "  x przy y=50 = " << result_test(1) << " m (powinno ~21.61)" << endl;
+    cout << endl;
+
+    cout << "=== OPTYMALIZACJA PROBLEMU RZECZYWISTEGO ===" << endl;
+    cout << "Punkt startowy: v0x = " << x0(0) << " m/s, omega = " << x0(1) << " rad/s" << endl << endl;
+
+    solution::clear_calls();
+
+    /// OPTYMALIZACJA
+    solution opt = pen_rzeczywisty(ff3R, x0, c, dc, epsilon, Nmax, ud1, ud2);
+
+    cout << "=== WYNIKI OPTYMALIZACJI ===" << endl;
+    cout << opt << endl;
+    cout << "v0x_opt = " << opt.x(0) << " m/s" << endl;
+    cout << "omega_opt = " << opt.x(1) << " rad/s" << endl;
+    cout << "Wartosc funkcji celu (z kara): " << opt.y << endl << endl;
+    cout << "Liczba wywolan funkcji celu: " << solution::f_calls << endl;  // ← DODAJ TO
+    cout << "Liczba wywolan z opt.f_calls: " << opt.f_calls << endl << endl;  // ← I TO
+
+    /// SYMULACJA DLA OPTYMALNYCH PARAMETRÃ“W
+    cout << "=== SYMULACJA TRAJEKTORII ===" << endl;
+
+    matrix Y0_sim(4, 1);
+    Y0_sim(0) = 0.0;
+    Y0_sim(1) = 100.0;
+    Y0_sim(2) = opt.x(0);  // v0x optymalne
+    Y0_sim(3) = 0.0;
+
+    matrix params_sim(7, 1);
+    params_sim(0) = opt.x(0);
+    params_sim(1) = opt.x(1);
+    params_sim(2) = masa;
+    params_sim(3) = promien;
+    params_sim(4) = wspolczynnik_oporu;
+    params_sim(5) = gestosc_powietrza;
+    params_sim(6) = g;
+
+    matrix* Y = solve_ode(df3R, 0.0, 0.01, 7.0, Y0_sim, params_sim, ud2);
+
+    /// Zapis do pliku CSV
+    ofstream Sout("zadanie3_SYMULACJA_backspin.csv");
+    Sout << "t;x;y;vx;vy\n";
+
+    int n = get_size(Y[0])[0];
+    double x_end_actual = 0.0;
+    double x_at_y50_actual = 0.0;
+
+    for (int i = 0; i < n; i++) {
+        double t = Y[0](i, 0);
+        double x = Y[1](i, 0);
+        double y = Y[1](i, 1);
+        double vx = Y[1](i, 2);
+        double vy = Y[1](i, 3);
+
+        Sout << t << ";" << x << ";" << y << ";" << vx << ";" << vy << "\n";
+
+
+        if (i > 0 && Y[1](i-1, 1) >= 50.0 && y < 50.0) {
+            x_at_y50_actual = x;
+        }
+
+
+        if (y <= 0.0 && i > 0) {
+            x_end_actual = x;
+            break;
+        }
+    }
+
+    Sout.close();
+
+    cout << "\n=== SZCZEGOLOWE WYNIKI SYMULACJI ===" << endl;
+    cout << "Rzeczywisty x_end = " << x_end_actual << " m" << endl;
+    cout << "Pozycja x przy y=50m: " << x_at_y50_actual << " m" << endl;
+
+    // Sprawdzenie ograniczenia
+    bool trafiono_kosz = (x_at_y50_actual >= 3.0 && x_at_y50_actual <= 7.0);
+
+    cout << "\n--- SPRAWDZENIE OGRANICZENIA ---" << endl;
+    cout << "Wymagany przedzial przy y=50m: [3.0, 7.0] m" << endl;
+    cout << "Aktualna pozycja przy y=50m: " << x_at_y50_actual << " m" << endl;
+
+    if (trafiono_kosz) {
+        cout << " TRAFIONO DO KOSZA! Ograniczenie spelnione." << endl;
+    } else {
+        cout << " NIE TRAFIONO DO KOSZA! Ograniczenie NIE spelnione." << endl;
+        if (x_at_y50_actual < 3.0) {
+            cout << "  Pilka przeleciala " << (3.0 - x_at_y50_actual) << " m ZA BLISKO" << endl;
+        } else {
+            cout << "  Pilka przeleciala " << (x_at_y50_actual - 7.0) << " m ZA DALEKO" << endl;
+        }
+    }
+
+
+
+    delete[] Y;
 }
 
 void lab4()

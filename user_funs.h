@@ -11,3 +11,6 @@ matrix ff1T(matrix, matrix = NAN, matrix = NAN);
 matrix ff2T(matrix, matrix = NAN, matrix = NAN);
 
 matrix ff3T(matrix, matrix , matrix = NAN);
+matrix df3R(double t, matrix Y, matrix ud1, matrix ud2);
+matrix ff3R(matrix x, matrix ud1, matrix ud2);
+matrix ff3R_base(matrix x, matrix ud1, matrix ud2);

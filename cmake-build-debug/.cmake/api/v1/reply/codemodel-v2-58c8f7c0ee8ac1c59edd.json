@@ -39,7 +39,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "OPTYMALIZATION::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-OPTYMALIZATION-Debug-083993a9a0c3dec5b6b2.json",
+					"jsonFile" : "target-OPTYMALIZATION-Debug-be84ce3081a20a72735f.json",
 					"name" : "OPTYMALIZATION",
 					"projectIndex" : 0
 				}
@@ -55,6 +55,6 @@
 	"version" : 
 	{
 		"major" : 2,
-		"minor" : 6
+		"minor" : 8
 	}
 }

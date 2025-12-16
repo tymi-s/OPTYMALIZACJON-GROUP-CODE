@@ -1,6 +1,5 @@
 #include"user_funs.h"
-
-#define M_PI 3.141592
+#include <cmath>
 
 matrix ff0T(matrix x, matrix ud1, matrix ud2)				// funkcja celu dla przypadku testowego
 {
@@ -130,15 +129,186 @@ matrix ff3T(matrix x, matrix ud1, matrix ud2) {
 	double x1 = m2d(x(0, 0));
 	double x2 = m2d(x(1, 0));
 
-	return (sin(M_PI*sqrt(pow(x1/M_PI,2)+pow(x2/M_PI,2))))/(M_PI(sqrt(pow(x1/M_PI,2)+pow(x2/M_PI,2))));
+	return (sin(M_PI*sqrt(pow(x1/M_PI,2)+pow(x2/M_PI,2))))/(M_PI*(sqrt(pow(x1/M_PI,2)+pow(x2/M_PI,2))));
 
 }
 
-matrix ff3T(matrix x, matrix ud1, matrix ud2) {
-    double x1 = m2d(x(0, 0));
-    double x2 = m2d(x(1, 0));
 
-    double y = sin(M_PI * sqrt(pow(x1 / M_PI, 2) + pow(x2 / M_PI, 2)) / M_PI * sqrt(pow(x1 / M_PI, 2) + pow(x2 / M_PI, 2)));
+/// ta funckcja opisuje układ równań różniczkowych ruhu piłki z efektem Magnusa
+matrix df3R(double t, matrix Y, matrix ud1, matrix ud2)
+{
+    // Y(0) = x (pozycja pozioma)
+    // Y(1) = y (pozycja pionowa)
+    // Y(2) = vx (prÄ™dkoÅ›Ä‡ pozioma)
+    // Y(3) = vy (prÄ™dkoÅ›Ä‡ pionowa)
 
-    return matrix(1, 1, y);
+    // ud1 zawiera parametry fizyczne: [v0x, omega, m, r, C, rho, g]
+    double v0x = ud1(0);
+    double omega = ud1(1);
+    double m = ud1(2);
+    double r = ud1(3);
+    double C = ud1(4);
+    double rho = ud1(5);
+    double g = ud1(6);
+
+    double vx = Y(2);
+    double vy = Y(3);
+
+    double S = M_PI * r * r;  // pole powierzchni
+
+    // PrÄ™dkoÅ›Ä‡ caÅ‚kowita
+    double v = sqrt(vx * vx + vy * vy);
+
+    // SiÅ‚a oporu (w kierunku przeciwnym do ruchu)
+    double Dx = 0.0;
+    double Dy = 0.0;
+
+    if (v > 1e-10) {  // Unikaj dzielenia przez zero
+        Dx = 0.5 * C * rho * S * vx * abs(vx);  // Proporcjonalna do vx
+        Dy = 0.5 * C * rho * S * vy * abs(vy);  // Proporcjonalna do vy
+    }
+
+    // SiÅ‚a Magnusa (prostopadÅ‚a do prÄ™dkoÅ›ci i osi rotacji)
+    double FMx = rho * vy * omega * M_PI * pow(r, 3);
+    double FMy = rho * vx * omega * M_PI * pow(r, 3);  // â† UWAGA: zmiana znaku!
+
+    matrix dY(4, 1);
+    dY(0) = vx;  // dx/dt = vx
+    dY(1) = vy;  // dy/dt = vy
+    dY(2) = -(Dx + FMx) / m;  // dvx/dt
+    dY(3) = -(Dy + FMy) / m - g;  // dvy/dt
+
+    return dY;
 }
+
+/// funkcja celu do problemu rzeczywistego lab3
+// Funkcja pomocnicza do obliczania tylko x_end i x_at_y50 BEZ kary
+matrix ff3R_base(matrix x, matrix ud1, matrix ud2)
+{
+    try {
+        double v0x = x(0);
+        double omega = x(1);
+
+        // Parametry fizyczne z ud1
+        double m = ud1(0);
+        double r = ud1(1);
+        double C = ud1(2);
+        double rho = ud1(3);
+        double g = ud1(4);
+
+        // Warunki początkowe: [x, y, vx, vy]
+        matrix Y0(4, 1);
+        Y0(0) = 0.0;
+        Y0(1) = 100.0;
+        Y0(2) = v0x;
+        Y0(3) = 0.0;
+
+        // Parametry dla df3R
+        matrix params(7, 1);
+        params(0) = v0x;
+        params(1) = omega;
+        params(2) = m;
+        params(3) = r;
+        params(4) = C;
+        params(5) = rho;
+        params(6) = g;
+
+        // Symulacja
+        matrix* Y = solve_ode(df3R, 0.0, 0.01, 7.0, Y0, params, ud2);
+
+        int n = get_size(Y[0])[0];
+        double x_end = 0.0;
+        double x_at_y50 = -1.0;
+        bool found_y50 = false;
+        bool found_ground = false;
+
+        for (int i = 0; i < n - 1; i++) {
+            double y_curr = Y[1](i, 1);
+            double y_next = Y[1](i + 1, 1);
+
+            if (!found_y50 && y_curr >= 50.0 && y_next < 50.0) {
+                x_at_y50 = Y[1](i, 0);
+                found_y50 = true;
+            }
+
+            if (y_curr > 0.0 && y_next <= 0.0) {
+                double t_interp = y_curr / (y_curr - y_next);
+                x_end = Y[1](i, 0) + t_interp * (Y[1](i + 1, 0) - Y[1](i, 0));
+                found_ground = true;
+                break;
+            }
+        }
+
+        if (!found_ground && n > 0) {
+            x_end = Y[1](n - 1, 0);
+        }
+
+        delete[] Y;
+
+        // Zwróć [x_end, x_at_y50, found_y50]
+        matrix result(3, 1);
+        result(0) = x_end;
+        result(1) = x_at_y50;
+        result(2) = found_y50 ? 1.0 : 0.0;
+
+        return result;
+    }
+    catch (string ex_info) {
+        throw("matrix ff3R_base(...):\n" + ex_info);
+    }
+}
+
+// Funkcja celu Z KARĄ
+matrix ff3R(matrix x, matrix ud1, matrix ud2)
+{
+    try {
+        // Oblicz podstawowe wartości
+        matrix base_result = ff3R_base(x, ud1, ud2);
+
+        double x_end = base_result(0);
+        double x_at_y50 = base_result(1);
+        bool found_y50 = (base_result(2) > 0.5);
+
+        // Współczynnik kary
+        double c_penalty = ud1(5);
+
+        // Funkcja kary
+        double penalty = 0.0;
+
+        if (found_y50) {
+            // Kara za wyjście poza przedział [3, 7]
+            if (x_at_y50 < 3.0) {
+                penalty += 1000.0 * pow(3.0 - x_at_y50, 2);
+            } else if (x_at_y50 > 7.0) {
+                penalty += 100.0 * pow(x_at_y50 - 5.0, 2);
+            }
+
+            // Dodatkowa kara za odległość od centrum (x=5)
+            // Im dalej od 5, tym większa kara
+            penalty += 1000.0 * pow(x_at_y50 - 5.0, 2);
+
+        } else {
+            penalty += 1000000.0;
+        }
+
+        // Minimalizujemy: -x_end + kara
+        return matrix(-x_end + c_penalty * penalty);
+    }
+    catch (string ex_info) {
+        throw("matrix ff3R(...):\n" + ex_info);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

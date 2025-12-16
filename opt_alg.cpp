@@ -557,6 +557,57 @@ solution pen(matrix(*ff)(matrix, matrix, matrix), matrix x0, double c, double dc
 	}
 }
 
+solution pen_rzeczywisty(matrix(*ff)(matrix, matrix, matrix), matrix x0, double c, double dc, double epsilon, int Nmax, matrix ud1, matrix ud2)
+{
+	try {
+        solution Xopt;
+        solution x_prev, x_curr;
+        x_prev.x = x0;
+        double c_current = c;
+
+        while(true){
+            // Rozszerz ud1 o współczynnik kary
+            matrix params(get_size(ud1)[0] + 1, 1);
+            for (int i = 0; i < get_size(ud1)[0]; i++) {
+                params(i) = ud1(i);
+            }
+            params(get_size(ud1)[0]) = c_current;  // Dodaj c_current na końcu
+
+            double s = 0.1;
+            double alpha = 1.0;
+            double beta = 0.5;
+            double gamma = 2.0;
+            double delta = 0.5;
+
+            x_curr = sym_NM(ff, x_prev.x, s, alpha, beta, gamma, delta, epsilon, Nmax, params, ud2);
+            Xopt = x_curr;
+
+            if(solution::f_calls > Nmax){
+                Xopt.flag = 0;
+                return Xopt;
+            }
+
+            // warunek stopu:
+            double distance = norm(x_curr.x - x_prev.x);
+            if(distance < epsilon){
+                Xopt.flag = 1;
+                return Xopt;
+            }
+
+            // aktualizacja współczynnika kary
+            c_current = dc * c_current;
+
+            // przejście do następnej iteracji
+            x_prev = x_curr;
+        }
+
+        return Xopt;
+	}
+	catch (string ex_info)
+	{
+		throw ("solution pen(...):\n" + ex_info);
+	}
+}
 solution sym_NM(matrix(*ff)(matrix, matrix, matrix), matrix x0, double s, double alpha, double beta, double gamma, double delta, double epsilon, int Nmax, matrix ud1, matrix ud2)
 {
 	try
