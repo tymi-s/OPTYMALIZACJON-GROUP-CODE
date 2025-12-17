@@ -340,6 +340,10 @@ matrix hessian(matrix x, matrix ud1, matrix ud2) {
     return H;
 }
 
+matrix f_line(matrix h, matrix xk, matrix dk) {
+    return ff4T(xk + m2d(h) * dk, NAN, NAN);
+}
+
 // matrix gradeint_spr(matrix x) {
 //     double x1 = x(0);
 //     double x2 = x(1);
@@ -349,6 +353,7 @@ matrix hessian(matrix x, matrix ud1, matrix ud2) {
 //
 //
 // }
+
 
 
 
