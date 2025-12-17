@@ -755,7 +755,27 @@ solution SD(matrix(*ff)(matrix, matrix, matrix), matrix(*gf)(matrix, matrix, mat
 	{
 		solution Xopt;
 		//Tu wpisz kod funkcji
+		matrix x = x0;
+		matrix x_prev;
+		matrix  d;
+		double norm;
+		double h = h0;
+       do {
+        	x_prev = x;
+            d = -gf(x,ud1,ud2);
+        	x = x + h * d;
 
+        	double diff0 = x(0) - x_prev(0);
+        	double diff1 = x(1) - x_prev(1);
+        	 norm = sqrt(diff0*diff0 + diff1*diff1);
+
+        	if (solution::f_calls > Nmax) {
+        		Xopt.flag = 0;
+        		return Xopt;
+        	}
+        }  while ( norm >= epsilon);
+        Xopt = x;
+		Xopt.flag = 1;
 		return Xopt;
 	}
 	catch (string ex_info)
@@ -770,7 +790,35 @@ solution CG(matrix(*ff)(matrix, matrix, matrix), matrix(*gf)(matrix, matrix, mat
 	{
 		solution Xopt;
 		//Tu wpisz kod funkcji
+		matrix x = x0;
+		matrix x_prev;
 
+		matrix g = gf(x0,ud1,ud2);
+		double B_B = pow(g(0), 2) + pow(g(1), 2);
+		matrix  d = -g;
+		double norm;
+		double h = h0;
+		double beta;
+		do {
+			x_prev = x;
+			x = x + h * d;
+
+			matrix g_new = gf(x,ud1,ud2);
+			double B_T = pow(g_new(0), 2) + pow(g_new(1), 2);
+			beta = B_T/ B_B;
+			d = -g_new + beta * d;
+			B_B=B_T;
+			double diff0 = x(0) - x_prev(0);
+			double diff1 = x(1) - x_prev(1);
+			norm = sqrt(diff0*diff0 + diff1*diff1);
+
+			if (solution::f_calls > Nmax) {
+				Xopt.flag = 0;
+				return Xopt;
+			}
+		}  while ( norm >= epsilon);
+		Xopt = x;
+		Xopt.flag = 1;
 		return Xopt;
 	}
 	catch (string ex_info)
@@ -786,7 +834,36 @@ solution Newton(matrix(*ff)(matrix, matrix, matrix), matrix(*gf)(matrix, matrix,
 	{
 		solution Xopt;
 		//Tu wpisz kod funkcji
+		matrix x = x0;
+		matrix x_prev;
+		matrix  d,g,H;
+		double norm;
+		double h = h0;
+		do {
+			x_prev = x;
+			g = gf(x,ud1,ud2);
+			H = Hf(x,ud1,ud2);
+			double det = H(0,0)*H(1,1) - H(0,1)*H(1,0);
+			matrix H_inv(2, 2);
+			H_inv(0,0) = H(1,1) / det;
+			H_inv(0,1) = -H(0,1) / det;
+			H_inv(1,0) = -H(1,0) / det;
+			H_inv(1,1) = H(0,0) / det;
+			d = -(H_inv * g);
 
+			x = x + h * d;
+
+			double diff0 = x(0) - x_prev(0);
+			double diff1 = x(1) - x_prev(1);
+			norm = sqrt(diff0*diff0 + diff1*diff1);
+
+			if (solution::f_calls > Nmax) {
+				Xopt.flag = 0;
+				return Xopt;
+			}
+		}  while ( norm >= epsilon);
+		Xopt = x;
+		Xopt.flag = 1;
 		return Xopt;
 	}
 	catch (string ex_info)
@@ -801,7 +878,33 @@ solution golden(matrix(*ff)(matrix, matrix, matrix), double a, double b, double 
 	{
 		solution Xopt;
 		//Tu wpisz kod funkcji
+		double alpha = (pow(5,0.5)-1)/2;
+		double c = b -alpha*(b-a);
+		double d = a + alpha*(b -a);
+		matrix X_c(2,1);
+		X_c(1) =c;
+		X_c(2) =0.0;
+		matrix X_b(2,1);
+		X_b(1) =b;
+		X_b(2) =0.0;
+		while (b-a<epsilon) {
+			if (ff4T(X_c,ud1,ud2)<ff4T(X_b,ud1,ud2)) {
+				b = d;
+				d = c;
+				c = b - alpha*(b - a);
+			}
+			else {
+				a = c;
+				c = d;
+				d = a + alpha*(b-a);
+			}
 
+			if (solution::f_calls > Nmax) {
+				Xopt.flag = 0;
+				return Xopt;
+			}
+		}
+		Xopt = (a+b)/2;
 		return Xopt;
 	}
 	catch (string ex_info)
@@ -839,6 +942,7 @@ solution EA(matrix(*ff)(matrix, matrix, matrix), int N, matrix lb, matrix ub, in
 		throw ("solution EA(...):\n" + ex_info);
 	}
 }
+
 
 
 
