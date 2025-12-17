@@ -18,3 +18,4 @@ matrix ff3R_base(matrix x, matrix ud1, matrix ud2);
 
 matrix ff4T(matrix x, matrix ud1, matrix ud2);
 matrix gradient(matrix x,matrix ud1,matrix ud2);
+matrix f_line(matrix h, matrix xk, matrix dk);
