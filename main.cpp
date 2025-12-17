@@ -19,6 +19,11 @@ void lab4();
 void lab5();
 void lab6();
 
+string toExcel(double value) {
+	string s = to_string(value);
+	replace(s.begin(), s.end(), '.', ',');
+	return s;
+}
                                                                                     
 int main()
 {
@@ -419,6 +424,7 @@ void lab6()
 {
 
 }
+
 
 
 
