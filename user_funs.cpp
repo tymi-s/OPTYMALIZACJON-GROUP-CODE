@@ -299,6 +299,56 @@ matrix ff3R(matrix x, matrix ud1, matrix ud2)
     }
 
 
+matrix ff4T(matrix x, matrix ud1, matrix ud2) {
+
+    double x1= x(0);
+    double x2 = x(1);
+    return 1.0/6.0 * pow(x1,6) - 1.05*pow(x1,4) + 2*x1*x1 + x2*x2 + x1*x2;
+}
+
+matrix gradient(matrix x,matrix ud1,matrix ud2) {
+    double x1 = x(0);
+    double x2 = x(1);
+
+    // 1. Obliczamy pochodne cząstkowe (sam gradient)
+    double g1 = pow(x1, 5) - 4.2 * pow(x1, 3) + 4 * x1 + x2;
+    double g2 = x1 + 2 * x2;
+
+    // 2. Tworzymy wektor wynikowy d
+    matrix d(2, 1);
+
+
+    d(0) = g1;
+    d(1) = g2;
+
+    return d;
+}
+
+matrix hessian(matrix x, matrix ud1, matrix ud2) {
+    double x1 = x(0);
+    double x2 = x(1);
+
+    // Tworzymy macierz 2x2
+    matrix H(2, 2);
+
+    // Wypełniamy wartościami wg wzorów wyżej
+    H(0, 0) = 5 * pow(x1, 4) - 12.6 * pow(x1, 2) + 4; // d2f / dx1^2
+    H(0, 1) = 1.0;                                    // d2f / dx1 dx2
+    H(1, 0) = 1.0;                                    // d2f / dx2 dx1 (symetryczna)
+    H(1, 1) = 2.0;                                    // d2f / dx2^2
+
+    return H;
+}
+
+// matrix gradeint_spr(matrix x) {
+//     double x1 = x(0);
+//     double x2 = x(1);
+//
+//     double g1 =
+//     matrix d(2, 1);
+//
+//
+// }
 
 
 
