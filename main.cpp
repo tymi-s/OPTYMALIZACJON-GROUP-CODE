@@ -327,7 +327,87 @@ void lab3()
 
 void lab4()
 {
+	double steps[] = { 0.05, 0.25 }; 
+	int Nmax = 1000;
+	double epsilon = 1e-3; 
 
+	srand(time(NULL));
+	
+	ofstream lab4SD("lab4Static.csv");
+	if (!lab4SD.good()) {
+		cout << "Cant open file";
+		return;
+	}
+
+	ofstream lab4Golden("lab4Golden.csv");
+	if (!lab4Golden.good()) {
+		cout << "Cant open file";
+		return;
+	}
+
+	lab4SD << "SD;X1;" << "X2;" << "x1_res;" << "x2_res;" << "y;" << "f_calls;" << "g_calls;"
+		<< "CG;" << "x1_res;" << "x2_res;" << "y;" << "f_calls;" << "g_calls;"
+		<< "Newton;" << "x1_res;" << "x2_res;" << "y;" << "f_calls;" << "g_calls\n";
+	lab4Golden << "SD;X1;" << "X2;" << "x1_res;" << "x2_res;" << "y;" << "f_calls;" << "g_calls;"
+		<< "CG;" << "x1_res;" << "x2_res;" << "y;" << "f_calls;" << "g_calls;"
+		<< "Newton;" << "x1_res;" << "x2_res;" << "y;" << "f_calls;" << "g_calls\n";
+
+	for (int step = 0; step < 2; ++step) {
+		//Static steps
+		for (int i = 0; i < 100; ++i) {
+			solution::clear_calls();
+			matrix x0(2, 1);
+			x0(0) = ((double)rand() / RAND_MAX) * 4.0 - 2.0;
+			x0(1) = ((double)rand() / RAND_MAX) * 4.0 - 2.0;
+
+			//SD
+			solution sd = SD(ff4T, gradient, x0, steps[step], epsilon, Nmax);
+			sd.fit_fun(ff4T, NAN, NAN);
+			lab4SD << ';' << toExcel(x0(0)) << ";" << toExcel(x0(1)) << ";" << toExcel(sd.x(0)) << ";" << toExcel(sd.x(1)) << ";"
+				<< sd.y << sd.f_calls << ";" << sd.g_calls << ";";
+
+
+			//CG
+			solution::clear_calls();
+			solution cg = CG(ff4T, gradient, x0, steps[step], epsilon, Nmax);
+			cg.fit_fun(ff4T, NAN, NAN);
+			lab4SD << ";" << toExcel(cg.x(0)) << ";" << toExcel(cg.x(1)) << ";"
+				<< cg.y << cg.f_calls << ";" << cg.g_calls << ";";
+
+			//Newton
+			solution::clear_calls();
+			solution nt = Newton(ff4T, gradient, hessian, x0, steps[step], epsilon, Nmax);
+			nt.fit_fun(ff4T, NAN, NAN);
+			lab4SD << ";" << toExcel(nt.x(0)) << ";" << toExcel(nt.x(1)) << ";"
+				<< nt.y << nt.f_calls << ";" << nt.g_calls << "\n";
+
+			//SD Golden
+			solution::clear_calls();
+			solution sdGolden = SD(ff4T, gradient, x0, 0.0, epsilon, Nmax);
+			sdGolden.fit_fun(ff4T, NAN, NAN);
+			lab4Golden << ";" << toExcel(x0(0)) << ";" << toExcel(x0(1)) << ";" << toExcel(sdGolden.x(0)) << ";" << toExcel(sdGolden.x(1)) << ";"
+				<< sdGolden.y << sdGolden.f_calls << ";" << sdGolden.g_calls << ";";
+
+			//CG Golden
+			solution::clear_calls();
+			solution cgGolden = CG(ff4T, gradient, x0, 0.0, epsilon, Nmax);
+			cgGolden.fit_fun(ff4T, NAN, NAN);
+			lab4Golden << ";" << toExcel(cgGolden.x(0)) << ";" << toExcel(cgGolden.x(1)) << ";"
+				<< cgGolden.y << cgGolden.f_calls << ";" << cgGolden.g_calls << ";";
+
+			//Newtwon Godlen
+			solution::clear_calls();
+			solution ntGolden = Newton(ff4T, gradient, hessian, x0, 0.0, epsilon, Nmax);
+			ntGolden.fit_fun(ff4T, NAN, NAN);
+			lab4Golden << ";" << toExcel(ntGolden.x(0)) << ";" << toExcel(ntGolden.x(1)) << ";"
+				<< ntGolden.y << ntGolden.f_calls << ";" << ntGolden.g_calls << "\n";
+		}
+		cout << "\nnext step\n";
+		lab4SD << "\nNext Step\n";
+		lab4Golden << "\nNext step\n";
+	}
+	lab4SD.close();
+	lab4Golden.close();
 }
 
 void lab5()
@@ -339,5 +419,6 @@ void lab6()
 {
 
 }
+
 
 
