@@ -32,7 +32,7 @@ int main()
 	try
 	{
 
-		lab4();
+		lab5();
 
 
 	}
@@ -417,13 +417,32 @@ void lab4()
 
 void lab5()
 {
+	srand(time(NULL));
+	double epsilon = 1e-3;
+	int Nmax = 1000;
+	double max_values[2]{ 10.0, 10.0 };
+	double min_values[2]{ -10.0, -10.0 };
 
+	makeW();
+
+	for (int i = 0; i < 101; i++)
+	{
+		matrix test = matrix(2, new double[2]{
+			min_values[0] + static_cast<double>(rand()) / RAND_MAX * (max_values[0] - min_values[0]),
+				min_values[1] + static_cast<double>(rand()) / RAND_MAX * (max_values[1] - min_values[1])
+			});
+		setW(i);
+		solution::clear_calls();
+		solution xOpt = Powell(ff5T3_1, test, epsilon, Nmax, NAN, NAN);
+		cout << xOpt << endl;
+	}
 }
 
 void lab6()
 {
 
 }
+
 
 
 
