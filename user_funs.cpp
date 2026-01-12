@@ -354,6 +354,77 @@ matrix f_line(matrix h, matrix xk, matrix dk) {
 //
 // }
 
+//lab5
+static std::vector<double> w(101);
+static int wi = -1;
+
+void setW(int i) {
+    wi = i;
+}
+
+void makeW() {
+    for (int i = 0; i < 101; i++) {
+        w[i] = static_cast<double>(i) * 0.01;
+    }
+}
+
+double getW() {
+    return w[wi];
+}
+
+matrix ff5T1_1(matrix x, matrix ud1, matrix ud2) {
+    if (isnan(ud2(0)))
+        return (pow(x(0) - 3.0, 2) + pow(x(1) - 3.0, 2));
+    else
+        return (pow(ud1(0) + x(0) * ud2(0) - 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) - 3.0, 2));
+}
+
+matrix ff5T2_1(matrix x, matrix ud1, matrix ud2) {
+    if (isnan(ud2(0)))
+        return (pow(x(0) + 3.0, 2) + pow(x(1) + 3.0, 2));
+    else
+        return (pow(ud1(0) + x(0) * ud2(0) + 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) + 3.0, 2));
+}
+
+matrix ff5T3_1(matrix x, matrix ud1, matrix ud2) {
+    return w[wi] * ff5T1_1(x, ud1, ud2) + (1.0 - w[wi]) * ff5T2_1(x, ud1, ud2);
+}
+
+matrix ff5T1_10(matrix x, matrix ud1, matrix ud2) {
+    if (isnan(ud2(0)))
+        return 10.0 * (pow(x(0) - 3.0, 2) + pow(x(1) - 3.0, 2));
+    else
+        return 10.0 * (pow(ud1(0) + x(0) * ud2(0) - 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) - 3.0, 2));
+}
+
+matrix ff5T2_10(matrix x, matrix ud1, matrix ud2) {
+    if (isnan(ud2(0)))
+        return 0.1 * (pow(x(0) + 3.0, 2) + pow(x(1) + 3.0, 2));
+    else
+        return 0.1 * (pow(ud1(0) + x(0) * ud2(0) + 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) + 3.0, 2));
+}
+matrix ff5T3_10(matrix x, matrix ud1, matrix ud2) {
+    return w[wi] * ff5T1_10(x, ud1, ud2) + (1.0 - w[wi]) * ff5T2_10(x, ud1, ud2);
+}
+
+matrix ff5T1_100(matrix x, matrix ud1, matrix ud2) {
+    if (isnan(ud2(0)))
+        return 100.0 * (pow(x(0) - 3.0, 2) + pow(x(1) - 3.0, 2));
+    else
+        return 100.0 * (pow(ud1(0) + x(0) * ud2(0) - 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) - 3.0, 2));
+}
+
+matrix ff5T2_100(matrix x, matrix ud1, matrix ud2) {
+    if (isnan(ud2(0)))
+        return 0.01 * (pow(x(0) + 3.0, 2) + pow(x(1) + 3.0, 2));
+    else
+        return 0.01 * (pow(ud1(0) + x(0) * ud2(0) + 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) + 3.0, 2));
+}
+
+matrix ff5T3_100(matrix x, matrix ud1, matrix ud2) {
+    return w[wi] * ff5T1_100(x, ud1, ud2) + (1.0 - w[wi]) * ff5T2_100(x, ud1, ud2);
+}
+
 
 
 
