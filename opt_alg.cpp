@@ -897,8 +897,45 @@ solution Powell(matrix(*ff)(matrix, matrix, matrix), matrix x0, double epsilon, 
 	try
 	{
 		solution Xopt;
-		//Tu wpisz kod funkcji
+		int n = get_len(x0);
+		matrix d = ident_mat(n);
+		matrix x = x0;
 
+		while (true) {
+			if (solution::f_calls > Nmax) {
+				Xopt.x = x;
+				Xopt.flag = -2;
+				break;
+			}
+
+			matrix p = matrix(n, n + 1);
+			p.set_col(x, 0);
+
+			for (int j = 1; j <= n; ++j) {
+				double* interval = expansion(ff, 0.0, 0.5, 2.0, Nmax, p[j - 1], d[j - 1]);
+				double h = m2d(golden(ff, interval[0], interval[1], epsilon, Nmax, p[j - 1], d[j - 1]).x);
+				p.set_col(p[j - 1] + h * d[j - 1], j);
+				delete[] interval;
+			}
+
+			if (norm(p[n] - p[0]) < epsilon) {
+				Xopt.x = p[n];
+				Xopt.flag = 0;
+				break;
+			}
+
+			for (int j = 0; j < n - 1; ++j) {
+				d.set_col(d[j + 1], j);
+			}
+			d.set_col(p[n] - p[0], n - 1);
+
+			double* interval = expansion(ff, 0.0, 0.5, 2.0, Nmax, p[n], d[n - 1]);
+			double h = m2d(golden(ff, interval[0], interval[1], epsilon, Nmax, p[n], d[n - 1]).x);
+			x = p[n] + h * d[n - 1];
+			delete[] interval;
+		}
+
+		Xopt.fit_fun(ff, NAN, NAN);
 		return Xopt;
 	}
 	catch (string ex_info)
@@ -921,6 +958,7 @@ solution EA(matrix(*ff)(matrix, matrix, matrix), int N, matrix lb, matrix ub, in
 		throw ("solution EA(...):\n" + ex_info);
 	}
 }
+
 
 
 
