@@ -259,8 +259,7 @@ matrix ff3R_base(matrix x, matrix ud1, matrix ud2)
 }
 
 // Funkcja celu Z KARĄ
-matrix ff3R(matrix x, matrix ud1, matrix ud2)
-{
+matrix ff3R(matrix x, matrix ud1, matrix ud2) {
     try {
         // Oblicz podstawowe wartości
         matrix base_result = ff3R_base(x, ud1, ud2);
@@ -297,133 +296,134 @@ matrix ff3R(matrix x, matrix ud1, matrix ud2)
     catch (string ex_info) {
         throw("matrix ff3R(...):\n" + ex_info);
     }
-
-
-matrix ff4T(matrix x, matrix ud1, matrix ud2) {
-
-    double x1= x(0);
-    double x2 = x(1);
-    return 1.0/6.0 * pow(x1,6) - 1.05*pow(x1,4) + 2*x1*x1 + x2*x2 + x1*x2;
 }
 
-matrix gradient(matrix x,matrix ud1,matrix ud2) {
-    double x1 = x(0);
-    double x2 = x(1);
+    matrix ff4T(matrix x, matrix ud1, matrix ud2) {
 
-    // 1. Obliczamy pochodne cząstkowe (sam gradient)
-    double g1 = pow(x1, 5) - 4.2 * pow(x1, 3) + 4 * x1 + x2;
-    double g2 = x1 + 2 * x2;
-
-    // 2. Tworzymy wektor wynikowy d
-    matrix d(2, 1);
-
-
-    d(0) = g1;
-    d(1) = g2;
-
-    return d;
-}
-
-matrix hessian(matrix x, matrix ud1, matrix ud2) {
-    double x1 = x(0);
-    double x2 = x(1);
-
-    // Tworzymy macierz 2x2
-    matrix H(2, 2);
-
-    // Wypełniamy wartościami wg wzorów wyżej
-    H(0, 0) = 5 * pow(x1, 4) - 12.6 * pow(x1, 2) + 4; // d2f / dx1^2
-    H(0, 1) = 1.0;                                    // d2f / dx1 dx2
-    H(1, 0) = 1.0;                                    // d2f / dx2 dx1 (symetryczna)
-    H(1, 1) = 2.0;                                    // d2f / dx2^2
-
-    return H;
-}
-
-matrix f_line(matrix h, matrix xk, matrix dk) {
-    return ff4T(xk + m2d(h) * dk, NAN, NAN);
-}
-
-// matrix gradeint_spr(matrix x) {
-//     double x1 = x(0);
-//     double x2 = x(1);
-//
-//     double g1 =
-//     matrix d(2, 1);
-//
-//
-// }
-
-//lab5
-static std::vector<double> w(101);
-static int wi = -1;
-
-void setW(int i) {
-    wi = i;
-}
-
-void makeW() {
-    for (int i = 0; i < 101; i++) {
-        w[i] = static_cast<double>(i) * 0.01;
+        double x1= x(0);
+        double x2 = x(1);
+        return 1.0/6.0 * pow(x1,6) - 1.05*pow(x1,4) + 2*x1*x1 + x2*x2 + x1*x2;
     }
-}
 
-double getW() {
-    return w[wi];
-}
+    matrix gradient(matrix x,matrix ud1,matrix ud2) {
+        double x1 = x(0);
+        double x2 = x(1);
 
-matrix ff5T1_1(matrix x, matrix ud1, matrix ud2) {
-    if (isnan(ud2(0)))
-        return (pow(x(0) - 3.0, 2) + pow(x(1) - 3.0, 2));
-    else
-        return (pow(ud1(0) + x(0) * ud2(0) - 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) - 3.0, 2));
-}
+        // 1. Obliczamy pochodne cząstkowe (sam gradient)
+        double g1 = pow(x1, 5) - 4.2 * pow(x1, 3) + 4 * x1 + x2;
+        double g2 = x1 + 2 * x2;
 
-matrix ff5T2_1(matrix x, matrix ud1, matrix ud2) {
-    if (isnan(ud2(0)))
-        return (pow(x(0) + 3.0, 2) + pow(x(1) + 3.0, 2));
-    else
-        return (pow(ud1(0) + x(0) * ud2(0) + 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) + 3.0, 2));
-}
+        // 2. Tworzymy wektor wynikowy d
+        matrix d(2, 1);
 
-matrix ff5T3_1(matrix x, matrix ud1, matrix ud2) {
-    return w[wi] * ff5T1_1(x, ud1, ud2) + (1.0 - w[wi]) * ff5T2_1(x, ud1, ud2);
-}
 
-matrix ff5T1_10(matrix x, matrix ud1, matrix ud2) {
-    if (isnan(ud2(0)))
-        return 10.0 * (pow(x(0) - 3.0, 2) + pow(x(1) - 3.0, 2));
-    else
-        return 10.0 * (pow(ud1(0) + x(0) * ud2(0) - 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) - 3.0, 2));
-}
+        d(0) = g1;
+        d(1) = g2;
 
-matrix ff5T2_10(matrix x, matrix ud1, matrix ud2) {
-    if (isnan(ud2(0)))
-        return 0.1 * (pow(x(0) + 3.0, 2) + pow(x(1) + 3.0, 2));
-    else
-        return 0.1 * (pow(ud1(0) + x(0) * ud2(0) + 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) + 3.0, 2));
-}
-matrix ff5T3_10(matrix x, matrix ud1, matrix ud2) {
-    return w[wi] * ff5T1_10(x, ud1, ud2) + (1.0 - w[wi]) * ff5T2_10(x, ud1, ud2);
-}
+        return d;
+    }
 
-matrix ff5T1_100(matrix x, matrix ud1, matrix ud2) {
-    if (isnan(ud2(0)))
-        return 100.0 * (pow(x(0) - 3.0, 2) + pow(x(1) - 3.0, 2));
-    else
-        return 100.0 * (pow(ud1(0) + x(0) * ud2(0) - 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) - 3.0, 2));
-}
+    matrix hessian(matrix x, matrix ud1, matrix ud2) {
+        double x1 = x(0);
+        double x2 = x(1);
 
-matrix ff5T2_100(matrix x, matrix ud1, matrix ud2) {
-    if (isnan(ud2(0)))
-        return 0.01 * (pow(x(0) + 3.0, 2) + pow(x(1) + 3.0, 2));
-    else
-        return 0.01 * (pow(ud1(0) + x(0) * ud2(0) + 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) + 3.0, 2));
-}
+        // Tworzymy macierz 2x2
+        matrix H(2, 2);
 
-matrix ff5T3_100(matrix x, matrix ud1, matrix ud2) {
-    return w[wi] * ff5T1_100(x, ud1, ud2) + (1.0 - w[wi]) * ff5T2_100(x, ud1, ud2);
-}
+        // Wypełniamy wartościami wg wzorów wyżej
+        H(0, 0) = 5 * pow(x1, 4) - 12.6 * pow(x1, 2) + 4; // d2f / dx1^2
+        H(0, 1) = 1.0;                                    // d2f / dx1 dx2
+        H(1, 0) = 1.0;                                    // d2f / dx2 dx1 (symetryczna)
+        H(1, 1) = 2.0;                                    // d2f / dx2^2
+
+        return H;
+    }
+
+    matrix f_line(matrix h, matrix xk, matrix dk) {
+        return ff4T(xk + m2d(h) * dk, NAN, NAN);
+    }
+
+    // matrix gradeint_spr(matrix x) {
+    //     double x1 = x(0);
+    //     double x2 = x(1);
+    //
+    //     double g1 =
+    //     matrix d(2, 1);
+    //
+    //
+    // }
+
+    //lab5
+    static std::vector<double> w(101);
+    static int wi = -1;
+
+    void setW(int i) {
+        wi = i;
+    }
+
+    void makeW() {
+        for (int i = 0; i < 101; i++) {
+            w[i] = static_cast<double>(i) * 0.01;
+        }
+    }
+
+    double getW() {
+        return w[wi];
+    }
+
+    matrix ff5T1_1(matrix x, matrix ud1, matrix ud2) {
+        if (isnan(ud2(0)))
+            return (pow(x(0) - 3.0, 2) + pow(x(1) - 3.0, 2));
+        else
+            return (pow(ud1(0) + x(0) * ud2(0) - 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) - 3.0, 2));
+    }
+
+    matrix ff5T2_1(matrix x, matrix ud1, matrix ud2) {
+        if (isnan(ud2(0)))
+            return (pow(x(0) + 3.0, 2) + pow(x(1) + 3.0, 2));
+        else
+            return (pow(ud1(0) + x(0) * ud2(0) + 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) + 3.0, 2));
+    }
+
+    matrix ff5T3_1(matrix x, matrix ud1, matrix ud2) {
+        return w[wi] * ff5T1_1(x, ud1, ud2) + (1.0 - w[wi]) * ff5T2_1(x, ud1, ud2);
+    }
+
+    matrix ff5T1_10(matrix x, matrix ud1, matrix ud2) {
+        if (isnan(ud2(0)))
+            return 10.0 * (pow(x(0) - 3.0, 2) + pow(x(1) - 3.0, 2));
+        else
+            return 10.0 * (pow(ud1(0) + x(0) * ud2(0) - 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) - 3.0, 2));
+    }
+
+    matrix ff5T2_10(matrix x, matrix ud1, matrix ud2) {
+        if (isnan(ud2(0)))
+            return 0.1 * (pow(x(0) + 3.0, 2) + pow(x(1) + 3.0, 2));
+        else
+            return 0.1 * (pow(ud1(0) + x(0) * ud2(0) + 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) + 3.0, 2));
+    }
+    matrix ff5T3_10(matrix x, matrix ud1, matrix ud2) {
+        return w[wi] * ff5T1_10(x, ud1, ud2) + (1.0 - w[wi]) * ff5T2_10(x, ud1, ud2);
+    }
+
+    matrix ff5T1_100(matrix x, matrix ud1, matrix ud2) {
+        if (isnan(ud2(0)))
+            return 100.0 * (pow(x(0) - 3.0, 2) + pow(x(1) - 3.0, 2));
+        else
+            return 100.0 * (pow(ud1(0) + x(0) * ud2(0) - 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) - 3.0, 2));
+    }
+
+    matrix ff5T2_100(matrix x, matrix ud1, matrix ud2) {
+        if (isnan(ud2(0)))
+            return 0.01 * (pow(x(0) + 3.0, 2) + pow(x(1) + 3.0, 2));
+        else
+            return 0.01 * (pow(ud1(0) + x(0) * ud2(0) + 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) + 3.0, 2));
+    }
+
+    matrix ff5T3_100(matrix x, matrix ud1, matrix ud2) {
+        return w[wi] * ff5T1_100(x, ud1, ud2) + (1.0 - w[wi]) * ff5T2_100(x, ud1, ud2);
+    }
+
 
 
 

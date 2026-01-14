@@ -10,6 +10,7 @@ Data ostatniej modyfikacji: 30.09.2025
 #include"opt_alg.h"
 #include <math.h>
 #include "user_funs.h"
+#include <functional>
 
 void lab0();
 void lab1();
@@ -330,113 +331,183 @@ void lab3()
     delete[] Y;
 }
 
-void lab4()
-{
-	double steps[] = { 0.05, 0.25 }; 
+// void lab4()
+// {
+// 	double steps[] = { 0.05, 0.25 };
+// 	int Nmax = 1000;
+// 	double epsilon = 1e-3;
+//
+// 	srand(time(NULL));
+//
+// 	ofstream lab4SD("lab4Static.csv");
+// 	if (!lab4SD.good()) {
+// 		cout << "Cant open file";
+// 		return;
+// 	}
+//
+// 	ofstream lab4Golden("lab4Golden.csv");
+// 	if (!lab4Golden.good()) {
+// 		cout << "Cant open file";
+// 		return;
+// 	}
+//
+// 	lab4SD << "SD;X1;" << "X2;" << "x1_res;" << "x2_res;" << "y;" << "f_calls;" << "g_calls;"
+// 		<< "CG;" << "x1_res;" << "x2_res;" << "y;" << "f_calls;" << "g_calls;"
+// 		<< "Newton;" << "x1_res;" << "x2_res;" << "y;" << "f_calls;" << "g_calls\n";
+// 	lab4Golden << "SD;X1;" << "X2;" << "x1_res;" << "x2_res;" << "y;" << "f_calls;" << "g_calls;"
+// 		<< "CG;" << "x1_res;" << "x2_res;" << "y;" << "f_calls;" << "g_calls;"
+// 		<< "Newton;" << "x1_res;" << "x2_res;" << "y;" << "f_calls;" << "g_calls\n";
+//
+// 	for (int step = 0; step < 2; ++step) {
+// 		//Static steps
+// 		for (int i = 0; i < 100; ++i) {
+// 			solution::clear_calls();
+// 			matrix x0(2, 1);
+// 			x0(0) = ((double)rand() / RAND_MAX) * 4.0 - 2.0;
+// 			x0(1) = ((double)rand() / RAND_MAX) * 4.0 - 2.0;
+//
+// 			//SD
+// 			solution sd = SD(ff4T, gradient, x0, steps[step], epsilon, Nmax);
+// 			sd.fit_fun(ff4T, NAN, NAN);
+// 			lab4SD << ';' << toExcel(x0(0)) << ";" << toExcel(x0(1)) << ";" << toExcel(sd.x(0)) << ";" << toExcel(sd.x(1)) << ";"
+// 				<< sd.y << sd.f_calls << ";" << sd.g_calls << ";";
+//
+//
+// 			//CG
+// 			solution::clear_calls();
+// 			solution cg = CG(ff4T, gradient, x0, steps[step], epsilon, Nmax);
+// 			cg.fit_fun(ff4T, NAN, NAN);
+// 			lab4SD << ";" << toExcel(cg.x(0)) << ";" << toExcel(cg.x(1)) << ";"
+// 				<< cg.y << cg.f_calls << ";" << cg.g_calls << ";";
+//
+// 			//Newton
+// 			solution::clear_calls();
+// 			solution nt = Newton(ff4T, gradient, hessian, x0, steps[step], epsilon, Nmax);
+// 			nt.fit_fun(ff4T, NAN, NAN);
+// 			lab4SD << ";" << toExcel(nt.x(0)) << ";" << toExcel(nt.x(1)) << ";"
+// 				<< nt.y << nt.f_calls << ";" << nt.g_calls << "\n";
+//
+// 			//SD Golden
+// 			solution::clear_calls();
+// 			solution sdGolden = SD(ff4T, gradient, x0, 0.0, epsilon, Nmax);
+// 			sdGolden.fit_fun(ff4T, NAN, NAN);
+// 			lab4Golden << ";" << toExcel(x0(0)) << ";" << toExcel(x0(1)) << ";" << toExcel(sdGolden.x(0)) << ";" << toExcel(sdGolden.x(1)) << ";"
+// 				<< sdGolden.y << sdGolden.f_calls << ";" << sdGolden.g_calls << ";";
+//
+// 			//CG Golden
+// 			solution::clear_calls();
+// 			solution cgGolden = CG(ff4T, gradient, x0, 0.0, epsilon, Nmax);
+// 			cgGolden.fit_fun(ff4T, NAN, NAN);
+// 			lab4Golden << ";" << toExcel(cgGolden.x(0)) << ";" << toExcel(cgGolden.x(1)) << ";"
+// 				<< cgGolden.y << cgGolden.f_calls << ";" << cgGolden.g_calls << ";";
+//
+// 			//Newtwon Godlen
+// 			solution::clear_calls();
+// 			solution ntGolden = Newton(ff4T, gradient, hessian, x0, 0.0, epsilon, Nmax);
+// 			ntGolden.fit_fun(ff4T, NAN, NAN);
+// 			lab4Golden << ";" << toExcel(ntGolden.x(0)) << ";" << toExcel(ntGolden.x(1)) << ";"
+// 				<< ntGolden.y << ntGolden.f_calls << ";" << ntGolden.g_calls << "\n";
+// 		}
+// 		cout << "\nnext step\n";
+// 		lab4SD << "\nNext Step\n";
+// 		lab4Golden << "\nNext step\n";
+// 	}
+// 	lab4SD.close();
+// 	lab4Golden.close();
+// }
+
+
+
+
+
+using FunctionPtr = matrix (*)(matrix, matrix, matrix);
+
+// --- FUNKCJA POMOCNICZA: Wykonuje pętlę po wagach dla podanych funkcji i punktów ---
+void uruchom_optymalizacje(
+	const std::vector<matrix>& start_points, // Przekazujemy punkty przez referencję (bez kopiowania)
+	FunctionPtr func_celu,                   // Funkcja optymalizowana (np. ff5T3_1)
+	FunctionPtr func_f1,                     // Funkcja składowa f1 (np. ff5T1_1)
+	FunctionPtr func_f2,                     // Funkcja składowa f2 (np. ff5T2_1)
+	double current_a,                        // Wartość parametru a (tylko do zapisu)
+	std::ofstream& file                      // Otwarty plik do zapisu wyników
+) {
+	double epsilon = 1e-3;
 	int Nmax = 1000;
-	double epsilon = 1e-3; 
 
-	srand(time(NULL));
-	
-	ofstream lab4SD("lab4Static.csv");
-	if (!lab4SD.good()) {
-		cout << "Cant open file";
-		return;
+	std::cout << "Przetwarzanie dla a = " << current_a << "..." << std::endl;
+
+	// Pętla po wagach 0..100
+	for (int i = 0; i < 101; i++) {
+		setW(i);
+		solution::clear_calls();
+
+		// Używamy i-tego punktu z wektora start_points
+		// Przekazujemy odpowiednią funkcję celu (func_celu)
+		solution xOpt = Powell(func_celu, start_points[i], epsilon, Nmax, NAN, NAN);
+
+		// Pobranie wyników
+		double x1_res = xOpt.x(0);
+		double x2_res = xOpt.x(1);
+
+
+		double val_f1 = func_f1(xOpt.x, NAN, NAN)(0);
+		double val_f2 = func_f2(xOpt.x, NAN, NAN)(0);
+		int calls = solution::f_calls;
+
+		// Zapis do wspólnego pliku
+		// Format: a; w; x1_opt; x2_opt; f1; f2; calls
+		file << x1_res << ";" << x2_res << ";"
+			 << val_f1 << ";" << val_f2 << ";"
+			 << calls << "\n";
 	}
-
-	ofstream lab4Golden("lab4Golden.csv");
-	if (!lab4Golden.good()) {
-		cout << "Cant open file";
-		return;
-	}
-
-	lab4SD << "SD;X1;" << "X2;" << "x1_res;" << "x2_res;" << "y;" << "f_calls;" << "g_calls;"
-		<< "CG;" << "x1_res;" << "x2_res;" << "y;" << "f_calls;" << "g_calls;"
-		<< "Newton;" << "x1_res;" << "x2_res;" << "y;" << "f_calls;" << "g_calls\n";
-	lab4Golden << "SD;X1;" << "X2;" << "x1_res;" << "x2_res;" << "y;" << "f_calls;" << "g_calls;"
-		<< "CG;" << "x1_res;" << "x2_res;" << "y;" << "f_calls;" << "g_calls;"
-		<< "Newton;" << "x1_res;" << "x2_res;" << "y;" << "f_calls;" << "g_calls\n";
-
-	for (int step = 0; step < 2; ++step) {
-		//Static steps
-		for (int i = 0; i < 100; ++i) {
-			solution::clear_calls();
-			matrix x0(2, 1);
-			x0(0) = ((double)rand() / RAND_MAX) * 4.0 - 2.0;
-			x0(1) = ((double)rand() / RAND_MAX) * 4.0 - 2.0;
-
-			//SD
-			solution sd = SD(ff4T, gradient, x0, steps[step], epsilon, Nmax);
-			sd.fit_fun(ff4T, NAN, NAN);
-			lab4SD << ';' << toExcel(x0(0)) << ";" << toExcel(x0(1)) << ";" << toExcel(sd.x(0)) << ";" << toExcel(sd.x(1)) << ";"
-				<< sd.y << sd.f_calls << ";" << sd.g_calls << ";";
-
-
-			//CG
-			solution::clear_calls();
-			solution cg = CG(ff4T, gradient, x0, steps[step], epsilon, Nmax);
-			cg.fit_fun(ff4T, NAN, NAN);
-			lab4SD << ";" << toExcel(cg.x(0)) << ";" << toExcel(cg.x(1)) << ";"
-				<< cg.y << cg.f_calls << ";" << cg.g_calls << ";";
-
-			//Newton
-			solution::clear_calls();
-			solution nt = Newton(ff4T, gradient, hessian, x0, steps[step], epsilon, Nmax);
-			nt.fit_fun(ff4T, NAN, NAN);
-			lab4SD << ";" << toExcel(nt.x(0)) << ";" << toExcel(nt.x(1)) << ";"
-				<< nt.y << nt.f_calls << ";" << nt.g_calls << "\n";
-
-			//SD Golden
-			solution::clear_calls();
-			solution sdGolden = SD(ff4T, gradient, x0, 0.0, epsilon, Nmax);
-			sdGolden.fit_fun(ff4T, NAN, NAN);
-			lab4Golden << ";" << toExcel(x0(0)) << ";" << toExcel(x0(1)) << ";" << toExcel(sdGolden.x(0)) << ";" << toExcel(sdGolden.x(1)) << ";"
-				<< sdGolden.y << sdGolden.f_calls << ";" << sdGolden.g_calls << ";";
-
-			//CG Golden
-			solution::clear_calls();
-			solution cgGolden = CG(ff4T, gradient, x0, 0.0, epsilon, Nmax);
-			cgGolden.fit_fun(ff4T, NAN, NAN);
-			lab4Golden << ";" << toExcel(cgGolden.x(0)) << ";" << toExcel(cgGolden.x(1)) << ";"
-				<< cgGolden.y << cgGolden.f_calls << ";" << cgGolden.g_calls << ";";
-
-			//Newtwon Godlen
-			solution::clear_calls();
-			solution ntGolden = Newton(ff4T, gradient, hessian, x0, 0.0, epsilon, Nmax);
-			ntGolden.fit_fun(ff4T, NAN, NAN);
-			lab4Golden << ";" << toExcel(ntGolden.x(0)) << ";" << toExcel(ntGolden.x(1)) << ";"
-				<< ntGolden.y << ntGolden.f_calls << ";" << ntGolden.g_calls << "\n";
-		}
-		cout << "\nnext step\n";
-		lab4SD << "\nNext Step\n";
-		lab4Golden << "\nNext step\n";
-	}
-	lab4SD.close();
-	lab4Golden.close();
 }
 
 void lab5()
 {
-	srand(time(NULL));
-	double epsilon = 1e-3;
-	int Nmax = 1000;
-	double max_values[2]{ 10.0, 10.0 };
-	double min_values[2]{ -10.0, -10.0 };
+    srand(time(NULL));
+    double max_values[2]{ 10.0, 10.0 };
+    double min_values[2]{ -10.0, -10.0 };
+    makeW();
+    std::cout << "Generowanie stalej puli 101 punktow startowych..." << std::endl;
+    std::vector<matrix> starting_points;
+    starting_points.reserve(101);
+    ofstream file_start("x_startowe.csv");
+    file_start << "x_1;x_2\n";
+    for (int i = 0; i < 101; i++) {
+       double r1 = static_cast<double>(rand()) / RAND_MAX;
+       double r2 = static_cast<double>(rand()) / RAND_MAX;
 
-	makeW();
+       double x1 = min_values[0] + r1 * (max_values[0] - min_values[0]);
+       double x2 = min_values[1] + r2 * (max_values[1] - min_values[1]);
 
-	for (int i = 0; i < 101; i++)
-	{
-		matrix test = matrix(2, new double[2]{
-			min_values[0] + static_cast<double>(rand()) / RAND_MAX * (max_values[0] - min_values[0]),
-				min_values[1] + static_cast<double>(rand()) / RAND_MAX * (max_values[1] - min_values[1])
-			});
-		setW(i);
-		solution::clear_calls();
-		solution xOpt = Powell(ff5T3_1, test, epsilon, Nmax, NAN, NAN);
-		cout << xOpt << endl;
-	}
+
+       starting_points.push_back(matrix(2, new double[2]{ x1, x2 }));
+
+
+       file_start <<  x1 << ";" << x2 << "\n";
+    }
+    file_start.close();
+
+
+    ofstream file_results("wyniki_zadanie_5a.csv");
+    if (!file_results.is_open()) {
+       std::cerr << "Nie udalo sie otworzyc pliku do zapisu!" << std::endl;
+       exit(0);
+    }
+
+    file_results << "x1_opt;x2_opt;f1_val;f2_val;calls\n";
+
+    uruchom_optymalizacje(starting_points, ff5T3_1, ff5T1_1, ff5T2_1, 1.0, file_results);
+
+    uruchom_optymalizacje(starting_points, ff5T3_10, ff5T1_10, ff5T2_10, 10.0, file_results);
+
+    uruchom_optymalizacje(starting_points, ff5T3_100, ff5T1_100, ff5T2_100, 100.0, file_results);
+
+
+    file_results.close();
+    std::cout << "Zakonczono. Wszystkie wyniki zapisane w 'wyniki_zadanie_5a.csv'." << std::endl;
 }
+
 
 void lab6()
 {
