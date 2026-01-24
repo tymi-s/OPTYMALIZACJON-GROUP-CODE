@@ -259,8 +259,7 @@ matrix ff3R_base(matrix x, matrix ud1, matrix ud2)
 }
 
 // Funkcja celu Z KARĄ
-matrix ff3R(matrix x, matrix ud1, matrix ud2)
-{
+matrix ff3R(matrix x, matrix ud1, matrix ud2) {
     try {
         // Oblicz podstawowe wartości
         matrix base_result = ff3R_base(x, ud1, ud2);
@@ -295,10 +294,10 @@ matrix ff3R(matrix x, matrix ud1, matrix ud2)
         return matrix(-x_end + c_penalty * penalty);
     }
     catch (string ex_info) {
-        throw("matrix ff3R(...):\n" + ex_info);
+        throw ("matrix ff3R(...):\n" + ex_info);
     }
 
-
+}
 matrix ff4T(matrix x, matrix ud1, matrix ud2) {
 
     double x1= x(0);
@@ -310,11 +309,11 @@ matrix gradient(matrix x,matrix ud1,matrix ud2) {
     double x1 = x(0);
     double x2 = x(1);
 
-    // 1. Obliczamy pochodne cząstkowe (sam gradient)
+
     double g1 = pow(x1, 5) - 4.2 * pow(x1, 3) + 4 * x1 + x2;
     double g2 = x1 + 2 * x2;
 
-    // 2. Tworzymy wektor wynikowy d
+
     matrix d(2, 1);
 
 
@@ -344,26 +343,392 @@ matrix f_line(matrix h, matrix xk, matrix dk) {
     return ff4T(xk + m2d(h) * dk, NAN, NAN);
 }
 
-// matrix gradeint_spr(matrix x) {
-//     double x1 = x(0);
-//     double x2 = x(1);
-//
-//     double g1 =
-//     matrix d(2, 1);
-//
-//
-// }
+matrix ff4R(matrix theta, matrix ud1, matrix ud2) {
+    // ud1 = macierz X (3x100) - dane wejściowe
+    // ud2 = macierz Y (1x100) - etykiety
+
+    int m = get_size(ud2)[1]; // liczba próbek (100)
+    double cost = 0.0;
+
+    for (int i = 0; i < m; i++) {
+        matrix xi = ud1[i]; // kolumna i z macierzy X
+        double yi = ud2(0, i);
+
+        // h_theta(xi) = 1 / (1 + e^(-theta^T * xi))
+        double z = m2d(trans(theta) * xi);
+        double h = 1.0 / (1.0 + exp(-z));
+
+        // Dodaj małą wartość aby uniknąć log(0)
+        h = max(h, 1e-15);
+        h = min(h, 1.0 - 1e-15);
+
+        cost += yi * log(h) + (1 - yi) * log(1 - h);
+    }
+
+    return matrix(-cost / m);
+}
+
+matrix gradient4R(matrix theta, matrix ud1, matrix ud2) {
+    // ud1 = macierz X (3x100)
+    // ud2 = macierz Y (1x100)
+
+    int m = get_size(ud2)[1]; // 100
+    int n = get_len(theta);    // 3
+
+    matrix grad(n, 1, 0.0);
+
+    for (int i = 0; i < m; i++) {
+        matrix xi = ud1[i];
+        double yi = ud2(0, i);
+
+        double z = m2d(trans(theta) * xi);
+        double h = 1.0 / (1.0 + exp(-z));
+
+        grad = grad + (h - yi) * xi;
+    }
+
+    return grad * (1.0 / m);
+}
+void load_data(matrix& X, matrix& Y) {
+    ifstream xfile("XData.txt");
+    ifstream yfile("YData.txt");
+
+    if (!xfile.good() || !yfile.good()) {
+        throw string("Nie można otworzyć plików danych");
+    }
+
+    X = matrix(3, 100);
+    Y = matrix(1, 100);
+
+    string line, value;
+
+
+
+
+    getline(xfile, line);
+    for (int j = 0; j < 100; j++) {
+        X(0, j) = 1.0;
+    }
+
+    // Wiersz 2: przedmiot 1
+    getline(xfile, line);
+    stringstream ss1(line);
+    for (int j = 0; j < 100; j++) {
+        getline(ss1, value, ';');
+        // Usuń białe znaki
+        value.erase(remove(value.begin(), value.end(), ' '), value.end());
+        if (!value.empty()) {
+            X(1, j) = stod(value);
+        }
+    }
+
+
+    getline(xfile, line);
+    stringstream ss2(line);
+    for (int j = 0; j < 100; j++) {
+        getline(ss2, value, ';');
+        value.erase(remove(value.begin(), value.end(), ' '), value.end());
+        if (!value.empty()) {
+            X(2, j) = stod(value);
+        }
+    }
+
+
+    getline(yfile, line);
+    stringstream ss3(line);
+    for (int j = 0; j < 100; j++) {
+        getline(ss3, value, ';');
+        value.erase(remove(value.begin(), value.end(), ' '), value.end());
+        if (!value.empty()) {
+            Y(0, j) = stod(value);
+        }
+    }
+
+    xfile.close();
+    yfile.close();
+
+    //  sprawdzenie czy sa poprawnie pliki wczytae
+    cout << "Pierwsze 5 probek:" << endl;
+    for (int i = 0; i < 5; i++) {
+        cout << "X[" << i << "] = [" << X(0,i) << ", " << X(1,i)
+             << ", " << X(2,i) << "], Y=" << Y(0,i) << endl;
+    }
+
+    cout << "\nOstatnie 3 probki:" << endl;
+    for (int i = 97; i < 100; i++) {
+        cout << "X[" << i << "] = [" << X(0,i) << ", " << X(1,i)
+             << ", " << X(2,i) << "], Y=" << Y(0,i) << endl;
+    }
+}
+
+double calculate_accuracy(matrix theta, matrix X, matrix Y) {
+    int m = get_size(Y)[1]; // 100
+    int correct = 0;
+
+    for (int i = 0; i < m; i++) {
+        matrix xi = X[i];
+        double yi = Y(0, i);
+
+        double z = m2d(trans(theta) * xi);
+        double h = 1.0 / (1.0 + exp(-z));
+
+        int prediction = (h >= 0.5) ? 1 : 0;
+
+        if (prediction == (int)yi) {
+            correct++;
+        }
+    }
+
+    return (100.0 * correct) / m;
+}
+
+
+//lab5
+static std::vector<double> w(101);
+static int wi = -1;
+
+void setW(int i) {
+    wi = i;
+}
+
+void makeW() {
+    for (int i = 0; i < 101; i++) {
+        w[i] = static_cast<double>(i) * 0.01;
+    }
+}
+
+double getW() {
+    return w[wi];
+}
+
+matrix ff5T1_1(matrix x, matrix ud1, matrix ud2) {
+    if (isnan(ud2(0)))
+        return (pow(x(0) - 3.0, 2) + pow(x(1) - 3.0, 2));
+    else
+        return (pow(ud1(0) + x(0) * ud2(0) - 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) - 3.0, 2));
+}
+
+matrix ff5T2_1(matrix x, matrix ud1, matrix ud2) {
+    if (isnan(ud2(0)))
+        return (pow(x(0) + 3.0, 2) + pow(x(1) + 3.0, 2));
+    else
+        return (pow(ud1(0) + x(0) * ud2(0) + 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) + 3.0, 2));
+}
+
+matrix ff5T3_1(matrix x, matrix ud1, matrix ud2) {
+    return w[wi] * ff5T1_1(x, ud1, ud2) + (1.0 - w[wi]) * ff5T2_1(x, ud1, ud2);
+}
+
+matrix ff5T1_10(matrix x, matrix ud1, matrix ud2) {
+    if (isnan(ud2(0)))
+        return 10.0 * (pow(x(0) - 3.0, 2) + pow(x(1) - 3.0, 2));
+    else
+        return 10.0 * (pow(ud1(0) + x(0) * ud2(0) - 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) - 3.0, 2));
+}
+
+matrix ff5T2_10(matrix x, matrix ud1, matrix ud2) {
+    if (isnan(ud2(0)))
+        return 0.1 * (pow(x(0) + 3.0, 2) + pow(x(1) + 3.0, 2));
+    else
+        return 0.1 * (pow(ud1(0) + x(0) * ud2(0) + 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) + 3.0, 2));
+}
+matrix ff5T3_10(matrix x, matrix ud1, matrix ud2) {
+    return w[wi] * ff5T1_10(x, ud1, ud2) + (1.0 - w[wi]) * ff5T2_10(x, ud1, ud2);
+}
+
+matrix ff5T1_100(matrix x, matrix ud1, matrix ud2) {
+    if (isnan(ud2(0)))
+        return 100.0 * (pow(x(0) - 3.0, 2) + pow(x(1) - 3.0, 2));
+    else
+        return 100.0 * (pow(ud1(0) + x(0) * ud2(0) - 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) - 3.0, 2));
+}
+
+matrix ff5T2_100(matrix x, matrix ud1, matrix ud2) {
+    if (isnan(ud2(0)))
+        return 0.01 * (pow(x(0) + 3.0, 2) + pow(x(1) + 3.0, 2));
+    else
+        return 0.01 * (pow(ud1(0) + x(0) * ud2(0) + 3.0, 2) + pow(ud1(1) + x(0) * ud2(1) + 3.0, 2));
+}
+
+matrix ff5T3_100(matrix x, matrix ud1, matrix ud2) {
+    return w[wi] * ff5T1_100(x, ud1, ud2) + (1.0 - w[wi]) * ff5T2_100(x, ud1, ud2);
+}
 
 
 
 
 
+// ==================== LAB 5 - PROBLEM RZECZYWISTY (BELKA) ====================
+
+// masę belki
+matrix ff5R_masa(matrix x, matrix ud1, matrix ud2) {
+    double l = x(0) / 1000.0;  // konwersja mm -> m
+    double d = x(1) / 1000.0;  // konwersja mm -> m
+    double rho = 8920.0;       // gęstość w kg/m³
+
+    double V = M_PI * pow(d / 2.0, 2.0) * l;
+    double masa = rho * V;
+
+    return matrix(masa);
+}
+
+// ugięcie belki
+matrix ff5R_ugiecie(matrix x, matrix ud1, matrix ud2) {
+    double l = x(0) / 1000.0;  // konwersja mm -> m
+    double d = x(1) / 1000.0;  // konwersja mm -> m
+    double P = 2000.0;         // siła w N (2 kN)
+    double E = 120e9;          // moduł Younga w Pa (120 GPa)
+
+    double u = (64.0 * P * pow(l, 3)) / (3.0 * E * M_PI * pow(d, 4));
+    u = u * 1000.0;  // Konwersja na mm
+
+    return matrix(u);
+}
+
+// naprężenie w belce
+matrix ff5R_naprezenie(matrix x, matrix ud1, matrix ud2) {
+    double l = x(0) / 1000.0;  // konwersja mm -> m
+    double d = x(1) / 1000.0;  // konwersja mm -> m
+    double P = 2000.0;         // siła w N (2 kN)
+
+    double sigma = (32.0 * P * l) / (M_PI * pow(d, 3));
+    sigma = sigma / 1e6;  // Konwersja na MPa
+
+    return matrix(sigma);
+}
+
+// Funkcja celu (do testowania)
+matrix ff5R_base(matrix x, matrix ud1, matrix ud2) {
+    double masa = m2d(ff5R_masa(x, ud1, ud2));
+    double ugiecie = m2d(ff5R_ugiecie(x, ud1, ud2));
+
+    matrix result(3, 1);
+    result(0) = masa;
+    result(1) = ugiecie;
+    result(2) = m2d(ff5R_naprezenie(x, ud1, ud2));
+
+    return result;
+}
+
+// Główna funkcja celu z karą
+matrix ff5R(matrix x, matrix ud1, matrix ud2) {
+    try {
+        // Sprawdź zakres zmiennych
+        double l = x(0);  // mm
+        double d = x(1);  // mm
 
 
+        double penalty_box = 0.0;
+        if (l < 200.0) penalty_box += 1e10 * pow(200.0 - l, 2);
+        if (l > 1000.0) penalty_box += 1e10 * pow(l - 1000.0, 2);
+        if (d < 10.0) penalty_box += 1e10 * pow(10.0 - d, 2);
+        if (d > 50.0) penalty_box += 1e10 * pow(d - 50.0, 2);
 
 
+        double masa = m2d(ff5R_masa(x, ud1, ud2));
+        double ugiecie = m2d(ff5R_ugiecie(x, ud1, ud2));
+        double naprezenie = m2d(ff5R_naprezenie(x, ud1, ud2));
 
 
+        double u_max = 2.5;      // mm
+        double sigma_max = 300.0; // MPa
 
+        double penalty_constraints = 0.0;
+
+
+        if (ugiecie > u_max) {
+            penalty_constraints += 1e8 * pow(ugiecie - u_max, 2);
+        }
+
+
+        if (naprezenie > sigma_max) {
+            penalty_constraints += 1e8 * pow(naprezenie - sigma_max, 2);
+        }
+
+
+        double f1_norm = masa / 10.0;
+        double f2_norm = ugiecie / 100.0;
+
+
+        double w_val;
+        if (wi >= 0 && wi < 101) {
+            w_val = w[wi];
+        } else {
+            w_val = 0.5;
+        }
+
+        // Funkcja celu: kryterium ważone + kara
+        double f = w_val * f1_norm + (1.0 - w_val) * f2_norm + penalty_box + penalty_constraints;
+
+        return matrix(f);
+    }
+    catch (string ex_info) {
+        throw ("matrix ff5R(...):\n" + ex_info);
+    }
+}
+
+matrix f_line_powell(matrix h, matrix xk, matrix dk) {
+    // h - krok wzdłuż kierunku
+    // xk - punkt bazowy
+    // dk - kierunek poszukiwań
+    return ff5R(xk + m2d(h) * dk, matrix(), matrix());
+}
+
+
+matrix ff6T(matrix x, matrix ud1, matrix ud2) {
+    double x1 = x(0);
+    double x2 = x(1);
+
+    return x1 * x1 + x2 * x2 - cos(2.5 * M_PI * x1) - cos(2.5 * M_PI * x2) + 2;
+}
+
+
+// Układ równań różniczkowych
+matrix df6(double t, matrix Y, matrix ud1, matrix ud2) {
+    double m1 = 1.0, m2 = 2.0;
+    double k1 = 4.0, k2 = 6.0;
+    double F = 5.0;
+    double b1 = ud1(0); // Optymalizowane b1
+    double b2 = ud1(1); // Optymalizowane b2
+
+    matrix dY(4, 1);
+    dY(0) = Y(1); // dx1/dt
+    dY(1) = (-b1 * Y(1) - b2 * (Y(1) - Y(3)) - k1 * Y(0) - k2 * (Y(0) - Y(2))) / m1; // d^2x1/dt^2
+    dY(2) = Y(3); // dx2/dt
+    dY(3) = (F + b2 * (Y(1) - Y(3)) + k2 * (Y(0) - Y(2))) / m2; // d^2x2/dt^2
+    return dY;
+}
+
+// Funkcja celu dla problemu rzeczywistego
+matrix ff6R(matrix x, matrix ud1, matrix ud2) {
+    // ud1 będzie przechowywać dane z polozenia.txt wczytane raz
+    // ud2 - pusta
+
+    // x(0) = b1, x(1) = b2
+    double t0 = 0, dt = 0.1, tend = 100;
+    matrix Y0(4, 1, 0.0); // startujemy z nieruchomych ciężarków
+
+    // Symulacja
+    matrix* Y_sim = solve_ode(df6, t0, dt, tend, Y0, x, matrix());
+
+    // Obliczanie błędu (Suma kwadratów różnic między symulacją a danymi z ud1)
+    double error = 0;
+    int n = get_size(Y_sim[0])[0]; // liczba kroków czasowych
+
+    for (int i = 0; i < n; ++i) {
+        // Dane z pliku (wczytane do ud1 w lab6()):
+        // ud1(i, 0) - czas, ud1(i, 1) - x1_exp, ud1(i, 2) - x2_exp
+        double x1_sim = Y_sim[1](i, 0);
+        double x2_sim = Y_sim[1](i, 2);
+
+        double x1_exp = ud1(i, 0);
+        double x2_exp = ud1(i, 1);
+
+        error += pow(x1_sim - x1_exp, 2) + pow(x2_sim - x2_exp, 2);
+    }
+
+    delete[] Y_sim;
+    return matrix(sqrt(error / n)); // Błąd średniokwadratowy
+}
 
 

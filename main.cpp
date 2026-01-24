@@ -32,7 +32,7 @@ int main()
 	try
 	{
 
-		lab4();
+		lab6();
 
 
 	}
@@ -332,12 +332,12 @@ void lab3()
 
 void lab4()
 {
-	double steps[] = { 0.05, 0.25 }; 
+	double steps[] = { 0.05, 0.25 };
 	int Nmax = 1000;
-	double epsilon = 1e-3; 
+	double epsilon = 1e-3;
 
 	srand(time(NULL));
-	
+
 	ofstream lab4SD("lab4Static.csv");
 	if (!lab4SD.good()) {
 		cout << "Cant open file";
@@ -413,18 +413,410 @@ void lab4()
 	}
 	lab4SD.close();
 	lab4Golden.close();
+    ////////////////////////////////////////////////////////  PROBLEM RZECZYWISTY //////////////////////////////////////////////////
+    cout << "\n=== PROBLEM RZECZYWISTY ===" << endl;
+
+    // Wczytaj dane
+    matrix X, Y;
+    load_data(X, Y);
+
+    // Punkt startowy
+    matrix theta0(3, 1, 0.0);
+
+    // Parametry
+//    double steps[] = {0.01, 0.001, 0.0001};
+//    int Nmax = 10000;
+//    double epsilon = 1e-5;
+
+    ofstream lab4Real("lab4Real.csv");
+    lab4Real << "h;theta0;theta1;theta2;J(theta*);P(theta*);g_calls\n";
+
+    for (int i = 0; i < 3; i++) {
+        solution::clear_calls();
+
+        solution cg = CG(ff4R, gradient4R, theta0, steps[i], epsilon, Nmax, X, Y);
+        cg.fit_fun(ff4R, X, Y);
+
+        double accuracy = calculate_accuracy(cg.x, X, Y);
+
+        lab4Real << toExcel(steps[i]) << ";"
+                 << toExcel(cg.x(0)) << ";"
+                 << toExcel(cg.x(1)) << ";"
+                 << toExcel(cg.x(2)) << ";"
+                 << toExcel(cg.y(0)) << ";"
+                 << toExcel(accuracy) << ";"
+                 << cg.g_calls << "\n";
+
+        cout << "h = " << steps[i] << ", Accuracy = " << accuracy << "%" << endl;
+    }
+
+    lab4Real.close();
+
+        // ========== WYKRES DLA NAJLEPSZEGO PRZYPADKU ==========
+    cout << "\n=== GENEROWANIE WYKRESU ===" << endl;
+
+    // Weź najlepsze θ (z h=0.001)
+    solution::clear_calls();
+    solution best_cg = CG(ff4R, gradient4R, theta0, 0.001, epsilon, Nmax, X, Y);
+
+    double theta0_val = best_cg.x(0);
+    double theta1_val = best_cg.x(1);
+    double theta2_val = best_cg.x(2);
+
+    cout << "Najlepsze theta: [" << theta0_val << ", " << theta1_val << ", " << theta2_val << "]" << endl;
+
+    ofstream wykres("lab4_wykres.csv");
+    wykres << "x1;x2;typ\n";
+
+    // Punkty przyjętych (zielone)
+    for (int i = 0; i < 100; i++) {
+        if (Y(0, i) == 1) {
+            wykres << X(1, i) << ";" << X(2, i) << ";Przyjety\n";
+        }
+    }
+
+    // Punkty odrzuconych (czerwone)
+    for (int i = 0; i < 100; i++) {
+        if (Y(0, i) == 0) {
+            wykres << X(1, i) << ";" << X(2, i) << ";Odrzucony\n";
+        }
+    }
+
+    // Granica klasyfikacji (niebieska linia)
+    for (double x1 = 20; x1 <= 100; x1 += 1.0) {
+        double x2 = -(theta0_val + theta1_val * x1) / theta2_val;
+        wykres << x1 << ";" << x2 << ";Granica\n";
+    }
+
+    wykres.close();
+    cout << "Wykres zapisany do: lab4_wykres.csv" << endl;
 }
 
+using FunctionPtr = matrix (*)(matrix, matrix, matrix);
+void uruchom_optymalizacje(
+	const std::vector<matrix>& start_points, // Przekazujemy punkty przez referencję (bez kopiowania)
+	FunctionPtr func_celu,                   // Funkcja optymalizowana (np. ff5T3_1)
+	FunctionPtr func_f1,                     // Funkcja składowa f1 (np. ff5T1_1)
+	FunctionPtr func_f2,                     // Funkcja składowa f2 (np. ff5T2_1)
+	double current_a,                        // Wartość parametru a (tylko do zapisu)
+	std::ofstream& file                      // Otwarty plik do zapisu wyników
+) {
+	double epsilon = 1e-3;
+	int Nmax = 1000;
+
+	std::cout << "Przetwarzanie dla a = " << current_a << "..." << std::endl;
+
+	// Pętla po wagach 0..100
+	for (int i = 0; i < 101; i++) {
+		setW(i);
+		solution::clear_calls();
+
+		// Używamy i-tego punktu z wektora start_points
+		// Przekazujemy odpowiednią funkcję celu (func_celu)
+		solution xOpt = Powell(func_celu, start_points[i], epsilon, Nmax, NAN, NAN);
+
+		// Pobranie wyników
+		double x1_res = xOpt.x(0);
+		double x2_res = xOpt.x(1);
+
+
+		double val_f1 = func_f1(xOpt.x, NAN, NAN)(0);
+		double val_f2 = func_f2(xOpt.x, NAN, NAN)(0);
+		int calls = solution::f_calls;
+
+		// Zapis do wspólnego pliku
+		// Format: a; w; x1_opt; x2_opt; f1; f2; calls
+		file << x1_res << ";" << x2_res << ";"
+			 << val_f1 << ";" << val_f2 << ";"
+			 << calls << "\n";
+	}
+}
 void lab5()
 {
 
+
+	//notatki
+    // optymalna belka wyjdzie krótka
+    // 101 optymalizacji - dla problemu rzeczywistego  i ten wykres to funckja f1 (oś x) względem funkcji f2 (oś y)
+    // w przypadku testowym szukamy minimum f1 i f2
+    // a w przypadku rzeczywistym f1 to jest masa a f2 to ugięcie
+    // a = 100 sprawia że funkcja f1 jest o wiele ważniejsza dla tego dla w =0 mamy rozwiązanie f1 a dla w >0 mamy rozwiązanie f2
+    // żeby nie dostać punktów tylko grupę punktów to trzeba f1 pomnożyć razy 1000 żeby obie funkcje przyjmowały wartości mniej więcej tego samego rzędu
+
+	//==================================================================================== TEST ALGORYTMU  ==============================================================================================
+	srand(time(NULL));
+	double epsilon = 1e-3;
+	int Nmax = 1000;
+	double max_values[2]{ 10.0, 10.0 };
+	double min_values[2]{ -10.0, -10.0 };
+
+	makeW();
+
+//	for (int i = 0; i < 101; i++)
+//	{
+//		matrix test = matrix(2, new double[2]{
+//			min_values[0] + static_cast<double>(rand()) / RAND_MAX * (max_values[0] - min_values[0]),
+//				min_values[1] + static_cast<double>(rand()) / RAND_MAX * (max_values[1] - min_values[1])
+//			});
+//		setW(i);
+//		solution::clear_calls();
+//		solution xOpt = Powell(ff5T3_1, test, epsilon, Nmax, NAN, NAN);
+//		cout << xOpt << endl;
+
+	//==================================================================================== OPTYMALIZACJA ==============================================================================================
+//	srand(time(NULL));
+//    makeW();
+//    std::cout << "Generowanie stalej puli 101 punktow startowych..." << std::endl;
+//    std::vector<matrix> starting_points;
+//    starting_points.reserve(101);
+//    ofstream file_start("x_startowe.csv");
+//    file_start << "x_1;x_2\n";
+//    for (int i = 0; i < 101; i++) {
+//       double r1 = static_cast<double>(rand()) / RAND_MAX;
+//       double r2 = static_cast<double>(rand()) / RAND_MAX;
+//
+//       double x1 = min_values[0] + r1 * (max_values[0] - min_values[0]);
+//       double x2 = min_values[1] + r2 * (max_values[1] - min_values[1]);
+//
+//
+//       starting_points.push_back(matrix(2, new double[2]{ x1, x2 }));
+//
+//
+//       file_start <<  x1 << ";" << x2 << "\n";
+//    }
+//    file_start.close();
+//
+//
+//    ofstream file_results("wyniki_zadanie_5a.csv");
+//    if (!file_results.is_open()) {
+//       std::cerr << "Nie udalo sie otworzyc pliku do zapisu!" << std::endl;
+//       exit(0);
+//    }
+//
+//    file_results << "x1_opt;x2_opt;f1_val;f2_val;calls\n";
+//
+//    uruchom_optymalizacje(starting_points, ff5T3_1, ff5T1_1, ff5T2_1, 1.0, file_results);
+//
+//    uruchom_optymalizacje(starting_points, ff5T3_10, ff5T1_10, ff5T2_10, 10.0, file_results);
+//
+//    uruchom_optymalizacje(starting_points, ff5T3_100, ff5T1_100, ff5T2_100, 100.0, file_results);
+//
+//
+//    file_results.close();
+//    std::cout << "Zakonczono. Wszystkie wyniki zapisane w 'wyniki_zadanie_5a.csv'." << std::endl;
+
+	//==================================================================================== PROBLEM RZECZYWISTY  ==============================================================================================
+	// ============== PROBLEM TESTOWY  ==============
+	//dla a=1
+	/*
+	cout << "\n=== PROBLEM TESTOWY (a=1) ===" << endl;
+	ofstream test1("lab5_test_a1.csv");
+	test1 << "w;x1;x2;f1;f2;f_combined;f_calls\n";
+
+	for (int i = 0; i < 101; i++)
+	{
+		matrix x0(2, 1);
+		x0(0) = -10.0 + static_cast<double>(rand()) / RAND_MAX * 20.0;  // [-10, 10]
+		x0(1) = -10.0 + static_cast<double>(rand()) / RAND_MAX * 20.0;  // [-10, 10]
+
+		setW(i);
+		solution::clear_calls();
+		solution xOpt = Powell(ff5T3_1, x0, epsilon, Nmax, matrix(), matrix());
+
+
+		double f1 = m2d(ff5T1_1(xOpt.x, matrix(), matrix()));
+		double f2 = m2d(ff5T2_1(xOpt.x, matrix(), matrix()));
+		double w_current = static_cast<double>(i) * 0.01;
+
+		test1 << toExcel(w_current) << ";"
+		      << toExcel(xOpt.x(0)) << ";" << toExcel(xOpt.x(1)) << ";"
+		      << toExcel(f1) << ";" << toExcel(f2) << ";"
+		      << toExcel(m2d(xOpt.y)) << ";" << xOpt.f_calls << "\n";
+
+		cout << "w=" << w_current << " -> f1=" << f1 << ", f2=" << f2 << endl;
+	}
+	test1.close();
+	cout << "Wyniki zapisane do: lab5_test_a1.csv\n" << endl;
+	*/
+
+
+	cout << "\n=== PROBLEM RZECZYWISTY - BELKA ===" << endl;
+
+	// Test weryfikacyjny z instrukcji
+	cout << "\n--- TEST WERYFIKACYJNY ---" << endl;
+	matrix x_test(2, 1);
+	x_test(0) = 500.0;  // l = 500 mm
+	x_test(1) = 25.0;   // d = 25 mm
+
+	matrix test_result = ff5R_base(x_test, matrix(), matrix());
+	cout << "Dla l=500mm, d=25mm:" << endl;
+	cout << "  Masa = " << test_result(0) << " kg (powinno ~2.19)" << endl;
+	cout << "  Ugiecie = " << test_result(1) << " mm (powinno ~36.22)" << endl;
+	cout << "  Naprezenie = " << test_result(2) << " MPa (powinno ~651.9)" << endl;
+
+	// Optymalizacja dla różnych wag
+	cout << "\n--- OPTYMALIZACJA ---" << endl;
+	ofstream real("lab5_real.csv");
+	real << "w;l0;d0;l_star;d_star;masa_kg;ugiecie_mm;naprezenie_MPa;f_combined;f_calls\n";
+
+	for (int i = 0; i < 101; i++)
+	{
+		// Losowy punkt startowy w dozwolonym zakresie
+		matrix x0(2, 1);
+		x0(0) = 200.0 + static_cast<double>(rand()) / RAND_MAX * (1000.0 - 200.0);  // l ∈ [200, 1000]
+		x0(1) = 10.0 + static_cast<double>(rand()) / RAND_MAX * (50.0 - 10.0);      // d ∈ [10, 50]
+
+		setW(i);  // KLUCZOWE: ustaw wagę przed optymalizacją
+		solution::clear_calls();
+
+		// Wywołaj Powell z PUSTYMI macierzami (konstrukcja matrix() tworzy pustą macierz)
+		solution xOpt = Powell(ff5R, x0, epsilon, Nmax, matrix(), matrix());
+
+		// Oblicz rzeczywiste wartości dla znalezionego rozwiązania
+		matrix result = ff5R_base(xOpt.x, matrix(), matrix());
+		double masa = result(0);
+		double ugiecie = result(1);
+		double naprezenie = result(2);
+
+		double w_current = static_cast<double>(i) * 0.01;
+
+		real << toExcel(w_current) << ";"
+			 << toExcel(x0(0)) << ";" << toExcel(x0(1)) << ";"
+			 << toExcel(xOpt.x(0)) << ";" << toExcel(xOpt.x(1)) << ";"
+			 << toExcel(masa) << ";" << toExcel(ugiecie) << ";" << toExcel(naprezenie) << ";"
+			 << toExcel(m2d(xOpt.y)) << ";" << xOpt.f_calls << "\n";
+
+		cout << "w=" << w_current << " -> l=" << xOpt.x(0) << "mm, d=" << xOpt.x(1)
+		     << "mm, m=" << masa << "kg, u=" << ugiecie << "mm, sigma=" << naprezenie << "MPa";
+
+		// Sprawdź ograniczenia
+		bool violated = false;
+		if (ugiecie > 2.5) {
+			cout << " [UWAGA: Ugiecie > 2.5mm!]";
+			violated = true;
+		}
+		if (naprezenie > 300.0) {
+			cout << " [UWAGA: Naprezenie > 300MPa!]";
+			violated = true;
+		}
+		if (!violated && ugiecie <= 2.5 && naprezenie <= 300.0) {
+			cout << " [OK]";
+		}
+		cout << endl;
+	}
+	real.close();
+
+	cout << "\n=== PODSUMOWANIE ===" << endl;
+	cout << "Wyniki zapisane do: lab5_real.csv" << endl;
+	cout << "\nAby zwizualizowac front Pareto:" << endl;
+	cout << "1. Otworz lab5_real.csv w Excelu" << endl;
+	cout << "2. Stworz wykres rozrzutu (scatter plot) z:" << endl;
+	cout << "   - Os X: masa_kg" << endl;
+	cout << "   - Os Y: ugiecie_mm" << endl;
+	cout << "3. Wykres pokaze front Pareto - kompromis miedzy masa a ugieciem" << endl;
+	cout << "\nInterpretacja wynikww:" << endl;
+	cout << "- w=0.0: minimalizacja TYLKO ugiecia (masa moze byc duze)" << endl;
+	cout << "- w=1.0: minimalizacja TYLKO masy (ugiecie może byc duze)" << endl;
+	cout << "- w=0.5: kompromis 50/50 miedzy masa a ugieciem" << endl;
+	cout << "- Rozwi zania optymalne w sensie Pareto leza na krzywej" << endl;
 }
+
+
+
+
+
 
 void lab6()
 {
+	/*
+	// --- STARY KOD TESTOWY (ZAKOMENTOWANY) ---
+	srand(time(NULL));
+	double epsilon = 1e-3;
+	int Nmax = 10000;
+	int mi = 5;
+	int lambd = 10;
+	double sigma[] = { 0.01, 0.1, 1.0, 10.0, 100.0 };
+	matrix lb(2, std::unique_ptr<double[]>(new double[2]{ -5.0, -5.0 }).get()),
+		   ub(2, std::unique_ptr<double[]>(new double[2]{ 5.0, 5.0 }).get());
 
+	for (int i = 0; i < 100; i++)
+	{
+		solution::clear_calls();
+		solution xOpt = EA(ff6T, 2, lb, ub, mi, lambd, sigma[4], epsilon, Nmax);
+		cout << xOpt << endl;
+	}
+	*/
+
+	// =================================================================
+	// === PROBLEM RZECZYWISTY - OPTYMALIZACJA b1, b2 ===
+	// =================================================================
+
+	 cout << "=== LAB 6: PROBLEM RZECZYWISTY (IDENTYFIKACJA b1, b2) ===" << endl;
+
+    // 1. Wczytywanie danych pomiarowych (POPRAWIONE)
+    ifstream file("polozenia.txt");
+    if (!file.is_open()) {
+        cerr << "BLAD: Brak pliku polozenia.txt!" << endl;
+        return;
+    }
+
+    matrix data_exp(1001, 2);
+    string line;
+    int row = 0;
+    while (getline(file, line) && row < 1001) {
+        // Zamieniamy przecinki na kropki i sredniki na spacje
+        replace(line.begin(), line.end(), ',', '.');
+        replace(line.begin(), line.end(), ';', ' ');
+
+        stringstream ss(line);
+        double val1, val2;
+        // Wczytujemy TYLKO dwie wartosci, bo tak wyglada Twoj plik
+        if (ss >> val1 >> val2) {
+            data_exp(row, 0) = val1; // x1_exp
+            data_exp(row, 1) = val2; // x2_exp
+            row++;
+        }
+    }
+    file.close();
+    cout << "Wczytano " << row << " wierszy danych eksperymentalnych." << endl;
+
+    // 2. Ustawienia EA
+    int N = 2;
+    matrix lb(2, 1, 0.1);
+    matrix ub(2, 1, 3.0);
+    int mi = 20;
+    int lambda = 60;
+    double sigma = 0.5;
+    double epsilon = 1e-6;
+    int Nmax = 15000;
+
+    // 3. Start optymalizacji
+    solution::clear_calls();
+    cout << "Optymalizacja trwa (to moze potrwac ok. 30-60 sekund)..." << endl;
+    solution opt = EA(ff6R, N, lb, ub, mi, lambda, sigma, epsilon, Nmax, data_exp);
+
+    // 4. Wyniki do Tabeli 3
+    cout << "\n--- WYNIKI DO TABELI 3 ---" << endl;
+    cout << "b1_opt = " << opt.x(0) << " Ns/m" << endl;
+    cout << "b2_opt = " << opt.x(1) << " Ns/m" << endl;
+    cout << "Blad (y*) = " << opt.y(0) << endl;
+    cout << "Liczba wywolan = " << solution::f_calls << endl;
+
+    // 5. Zapis danych do wykresu (do Excela)
+    matrix Y0(4, 1, 0.0);
+    matrix* Y = solve_ode(df6, 0.0, 0.1, 100.0, Y0, opt.x);
+    ofstream Sout("wynik_symulacji_lab6.csv");
+    Sout << "t;x1_sim;x2_sim;x1_exp;x2_exp\n";
+    for (int i = 0; i < 1001; i++) {
+        Sout << toExcel(Y[0](i, 0)) << ";"
+             << toExcel(Y[1](i, 0)) << ";"
+             << toExcel(Y[1](i, 2)) << ";"
+             << toExcel(data_exp(i, 0)) << ";"
+             << toExcel(data_exp(i, 1)) << "\n";
+    }
+    Sout.close();
+    cout << "\nZapisano 'wynik_symulacji_lab6.csv'. Otworz go w Excelu." << endl;
+    delete[] Y;
 }
-
-
 
 

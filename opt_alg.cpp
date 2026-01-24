@@ -892,32 +892,220 @@ solution golden(matrix(*ff)(matrix, matrix, matrix), double a, double b, double 
 	catch (string ex_info) { throw ("golden error:\n" + ex_info); }
 }
 
-solution Powell(matrix(*ff)(matrix, matrix, matrix), matrix x0, double epsilon, int Nmax, matrix ud1, matrix ud2)
-{
-	try
-	{
-		solution Xopt;
-		//Tu wpisz kod funkcji
+solution Powell(matrix(*ff)(matrix, matrix, matrix), matrix x0, double epsilon, int Nmax, matrix ud1, matrix ud2) {
+    try {
+        solution Xopt;
+        int n = get_len(x0);
+        matrix d = ident_mat(n);
+        matrix x = x0;
 
-		return Xopt;
-	}
-	catch (string ex_info)
-	{
-		throw ("solution Powell(...):\n" + ex_info);
-	}
+        while (true) {
+            if (solution::f_calls > Nmax) {
+                Xopt.x = x;
+                Xopt.flag = -2;
+                break;
+            }
+
+            matrix p = matrix(n, n + 1);
+            p.set_col(x, 0);
+
+            for (int j = 1; j <= n; ++j) {
+
+                double *interval = expansion(f_line_powell, 0.0, 0.5, 2.0, Nmax, p[j - 1], d[j - 1]);
+                double h = m2d(golden(f_line_powell, interval[0], interval[1], epsilon, Nmax, p[j - 1], d[j - 1]).x);
+                p.set_col(p[j - 1] + h * d[j - 1], j);
+                delete[] interval;
+            }
+
+            if (norm(p[n] - p[0]) < epsilon) {
+                Xopt.x = p[n];
+                Xopt.flag = 0;
+                break;
+            }
+
+            for (int j = 0; j < n - 1; ++j) {
+                d.set_col(d[j + 1], j);
+            }
+            d.set_col(p[n] - p[0], n - 1);
+
+
+            double *interval = expansion(f_line_powell, 0.0, 0.5, 2.0, Nmax, p[n], d[n - 1]);
+            double h = m2d(golden(f_line_powell, interval[0], interval[1], epsilon, Nmax, p[n], d[n - 1]).x);
+            x = p[n] + h * d[n - 1];
+            delete[] interval;
+        }
+
+
+        Xopt.fit_fun(ff, matrix(), matrix());
+        return Xopt;
+    }
+    catch (string ex_info)
+    {
+        throw ("solution Powell(...):\n" + ex_info);
+    }
 }
 
 solution EA(matrix(*ff)(matrix, matrix, matrix), int N, matrix lb, matrix ub, int mi, int lambda, matrix sigma0, double epsilon, int Nmax, matrix ud1, matrix ud2)
 {
+	solution* P = new solution[mi];
+	solution* T = new solution[lambda];
+
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_real_distribution<> dis_unif(0.0, 1.0);
+	std::normal_distribution<> dis_norm(0.0, 1.0);
+
+
 	try
 	{
 		solution Xopt;
-		//Tu wpisz kod funkcji
+		Xopt.y = matrix(1, 1);
+		Xopt.y(0) = 1e10;
 
+		double alpha = pow(N, -0.5);
+		double beta = pow(2.0 * N, -0.25);
+
+		// Generowanie populacji początkowej
+		for (int i = 0; i < mi; ++i) {
+			P[i].x = matrix(N, 1);
+			P[i].ud = matrix(N, 1);
+
+			for (int j = 0; j < N; ++j) {
+				// Losowanie x w przedziale [lb, ub]
+				double r = dis_unif(gen);
+				P[i].x(j) = lb(j) + (ub(j) - lb(j)) * r;
+
+				// Ustawienie początkowego sigma
+				if (get_len(sigma0) == N)
+					P[i].ud(j) = sigma0(j);
+				else
+					P[i].ud(j) = sigma0(0);
+			}
+
+			P[i].fit_fun(ff, ud1, ud2);
+
+			// Aktualizacja najlepszego rozwiązania
+			if (P[i].y(0) < Xopt.y(0)) {
+				Xopt = P[i];
+			}
+		}
+
+		while (solution::f_calls < Nmax)
+		{
+			if (Xopt.y(0) < epsilon) break;
+
+			matrix phi(mi, 1);
+			double sum_phi = 0.0;
+
+			// Obliczenie przystosowania
+			for (int i = 0; i < mi; ++i) {
+				double val = P[i].y(0);
+				if (val < 1e-10) val = 1e-10;
+				phi(i) = 1.0 / val;
+				sum_phi += phi(i);
+			}
+
+			matrix q(mi, 1);
+			double prev_q = 0.0;
+			for (int i = 0; i < mi; ++i) {
+				double prob = phi(i) / sum_phi;
+				q(i) = prev_q + prob;
+				prev_q = q(i);
+			}
+			q(mi - 1) = 1.0;
+
+			for (int k = 0; k < lambda; ++k) {
+				// Wybór rodzica A
+				double r1 = dis_unif(gen);
+				int idxA = 0;
+				for (int i = 0; i < mi; ++i) {
+					if (r1 <= q(i)) {
+						idxA = i;
+						break;
+					}
+				}
+
+				// Wybór rodzica B
+				double r2 = dis_unif(gen);
+				int idxB = 0;
+				for (int i = 0; i < mi; ++i) {
+					if (r2 <= q(i)) {
+						idxB = i;
+						break;
+					}
+				}
+
+				solution A = P[idxA];
+				solution B = P[idxB];
+
+				// Krzyżowanie uśredniające (x oraz sigma)
+				double w = dis_unif(gen);
+
+				T[k].x = matrix(N, 1);
+				T[k].ud = matrix(N, 1);
+
+				double global_a = dis_norm(gen);
+
+				for (int j = 0; j < N; ++j) {
+					// Krzyżowanie zmiennych decyzyjnych
+					T[k].x(j) = w * A.x(j) + (1.0 - w) * B.x(j);
+
+					// Krzyżowanie parametrów mutacji (sigma)
+					T[k].ud(j) = w * A.ud(j) + (1.0 - w) * B.ud(j);
+
+					// Mutacja sigmy
+					// sigma_new = sigma * exp(alpha*a + beta*b)
+					double local_b_sigma = dis_norm(gen);
+					T[k].ud(j) = T[k].ud(j) * exp(alpha * global_a + beta * local_b_sigma);
+
+					// Mutacja x
+					// x_new = x + sigma_new * N(0,1)
+					double local_b_x = dis_norm(gen);
+					T[k].x(j) = T[k].x(j) + T[k].ud(j) * local_b_x;
+
+					// Ograniczenia (bounds)
+					if (T[k].x(j) < lb(j)) T[k].x(j) = lb(j);
+					if (T[k].x(j) > ub(j)) T[k].x(j) = ub(j);
+				}
+
+				T[k].fit_fun(ff, ud1, ud2);
+			}
+
+			solution* combined = new solution[mi + lambda];
+
+			for (int i = 0; i < mi; ++i) combined[i] = P[i];
+
+			for (int i = 0; i < lambda; ++i) combined[mi + i] = T[i];
+
+			// Sortowanie wszystkich rozwiązań
+			std::sort(combined, combined + mi + lambda, [](const solution& a, const solution& b) {
+				return a.y(0) < b.y(0);
+				});
+
+			// Wybór mi najlepszych z powrotem do P
+			for (int i = 0; i < mi; ++i) {
+				P[i] = combined[i];
+			}
+
+			// Aktualizacja globalnego optimum
+			if (P[0].y(0) < Xopt.y(0)) {
+				Xopt = P[0];
+			}
+
+			delete[] combined;
+		}
+
+		delete[] P;
+		delete[] T;
+
+		if (solution::f_calls > Nmax) Xopt.flag = 0;
+		else Xopt.flag = 1;
 		return Xopt;
 	}
 	catch (string ex_info)
 	{
+		if (P) delete[] P;
+		if (T) delete[] T;
 		throw ("solution EA(...):\n" + ex_info);
 	}
 }
