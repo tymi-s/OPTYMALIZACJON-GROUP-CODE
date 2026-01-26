@@ -751,72 +751,141 @@ void lab6()
 	// === PROBLEM RZECZYWISTY - OPTYMALIZACJA b1, b2 ===
 	// =================================================================
 
-	 cout << "=== LAB 6: PROBLEM RZECZYWISTY (IDENTYFIKACJA b1, b2) ===" << endl;
-
-    // 1. Wczytywanie danych pomiarowych (POPRAWIONE)
-    ifstream file("polozenia.txt");
-    if (!file.is_open()) {
-        cerr << "BLAD: Brak pliku polozenia.txt!" << endl;
-        return;
-    }
-
-    matrix data_exp(1001, 2);
-    string line;
-    int row = 0;
-    while (getline(file, line) && row < 1001) {
-        // Zamieniamy przecinki na kropki i sredniki na spacje
-        replace(line.begin(), line.end(), ',', '.');
-        replace(line.begin(), line.end(), ';', ' ');
-
-        stringstream ss(line);
-        double val1, val2;
-        // Wczytujemy TYLKO dwie wartosci, bo tak wyglada Twoj plik
-        if (ss >> val1 >> val2) {
-            data_exp(row, 0) = val1; // x1_exp
-            data_exp(row, 1) = val2; // x2_exp
-            row++;
-        }
-    }
-    file.close();
-    cout << "Wczytano " << row << " wierszy danych eksperymentalnych." << endl;
+	 // cout << "=== LAB 6: PROBLEM RZECZYWISTY (IDENTYFIKACJA b1, b2) ===" << endl;
+  //
+  //   // 1. Wczytywanie danych pomiarowych (POPRAWIONE)
+  //   ifstream file("polozenia.txt");
+  //   if (!file.is_open()) {
+  //       cerr << "BLAD: Brak pliku polozenia.txt!" << endl;
+  //       return;
+  //   }
+  //
+  //   matrix data_exp(1001, 2);
+  //   string line;
+  //   int row = 0;
+  //   while (getline(file, line) && row < 1001) {
+  //       // Zamieniamy przecinki na kropki i sredniki na spacje
+  //       replace(line.begin(), line.end(), ',', '.');
+  //       replace(line.begin(), line.end(), ';', ' ');
+  //
+  //       stringstream ss(line);
+  //       double val1, val2;
+  //       // Wczytujemy TYLKO dwie wartosci, bo tak wyglada Twoj plik
+  //       if (ss >> val1 >> val2) {
+  //           data_exp(row, 0) = val1; // x1_exp
+  //           data_exp(row, 1) = val2; // x2_exp
+  //           row++;
+  //       }
+  //   }
+  //   file.close();
+  //   cout << "Wczytano " << row << " wierszy danych eksperymentalnych." << endl;
 
     // 2. Ustawienia EA
-    int N = 2;
-    matrix lb(2, 1, 0.1);
-    matrix ub(2, 1, 3.0);
+	int N = 2;
+	// Zakładam metodę wypełniania lub dostęp indeksowy
+	matrix lb(N, 1);
+	matrix ub(N, 1);
+
+	lb(0, 0) = -5.0;
+	lb(1, 0) = -5.0;
+	ub(0, 0) = 5.0;
+	ub(1, 0) = 5.0;
+    // matrix lb(2, 1, 0.1);
+    // matrix ub(2, 1, 3.0);
     int mi = 20;
     int lambda = 60;
-    double sigma = 0.5;
+    //double sigma = 0.5;
     double epsilon = 1e-6;
     int Nmax = 15000;
 
-    // 3. Start optymalizacji
-    solution::clear_calls();
-    cout << "Optymalizacja trwa (to moze potrwac ok. 30-60 sekund)..." << endl;
-    solution opt = EA(ff6R, N, lb, ub, mi, lambda, sigma, epsilon, Nmax, data_exp);
+	double sigma_values[] = {0.01, 0.1, 1.0, 10.0, 100.0};
+	int num_sigma = 5;
+	int num_runs = 100;
 
-    // 4. Wyniki do Tabeli 3
-    cout << "\n--- WYNIKI DO TABELI 3 ---" << endl;
-    cout << "b1_opt = " << opt.x(0) << " Ns/m" << endl;
-    cout << "b2_opt = " << opt.x(1) << " Ns/m" << endl;
-    cout << "Blad (y*) = " << opt.y(0) << endl;
-    cout << "Liczba wywolan = " << solution::f_calls << endl;
+	// Generator liczb losowych
+	random_device rd;
+	mt19937 gen(rd());
+	uniform_real_distribution<> dis(-5.0, 5.0);
 
-    // 5. Zapis danych do wykresu (do Excela)
-    matrix Y0(4, 1, 0.0);
-    matrix* Y = solve_ode(df6, 0.0, 0.1, 100.0, Y0, opt.x);
-    ofstream Sout("wynik_symulacji_lab6.csv");
-    Sout << "t;x1_sim;x2_sim;x1_exp;x2_exp\n";
-    for (int i = 0; i < 1001; i++) {
-        Sout << toExcel(Y[0](i, 0)) << ";"
-             << toExcel(Y[1](i, 0)) << ";"
-             << toExcel(Y[1](i, 2)) << ";"
-             << toExcel(data_exp(i, 0)) << ";"
-             << toExcel(data_exp(i, 1)) << "\n";
-    }
-    Sout.close();
-    cout << "\nZapisano 'wynik_symulacji_lab6.csv'. Otworz go w Excelu." << endl;
-    delete[] Y;
+	ofstream outfile("wyniki_optymalizacji_3.txt");
+	outfile << fixed << setprecision(10);
+	outfile << "Sigma\tRun\tx1_start\tx2_start\tx1_opt\tx2_opt\tf_opt\tIteracje\n";
+
+	// Pętla po wartościach sigma
+	for (int s = 0; s < num_sigma; s++) {
+		double sigma = sigma_values[s];
+		matrix sigma0(N, 1);
+		sigma0(0) = sigma;
+		sigma0(1) = sigma;
+
+		cout << "Testowanie sigma = " << sigma << endl;
+
+		// 100 optymalizacji dla danej wartości sigma
+		for (int run = 0; run < num_runs; run++) {
+			// Losowy punkt startowy
+			matrix x0(N, 1);
+			x0(0) = dis(gen);
+			x0(1) = dis(gen);
+
+			// Zapisz punkt startowy
+			double x1_start = x0(0);
+			double x2_start = x0(1);
+
+			// Wykonaj optymalizację
+			solution result = EA(ff6T, N, lb, ub, mi, lambda, sigma0, epsilon, Nmax);
+             int iteracje = solution::f_calls/ lambda;
+			// Zapisz wyniki do pliku
+			outfile << sigma << "\t"
+					<< run + 1 << "\t"
+					<< x1_start << "\t"
+					<< x2_start << "\t"
+					<< result.x(0) << "\t"
+					<< result.x(1) << "\t"
+					<< result.y(0) << "\t"
+					<< iteracje << "\n";
+
+			// Informacja o postępie co 10 uruchomień
+			if ((run + 1) % 10 == 0) {
+				cout << "  Ukończono " << run + 1 << " / " << num_runs << " uruchomień" << endl;
+			}
+		}
+
+		cout << "Zakończono dla sigma = " << sigma << "\n" << endl;
+	}
+
+	outfile.close();
+	cout << "Wyniki zapisane do pliku: wyniki_optymalizacji.txt" << endl;
+
+	// Opcjonalnie: oblicz i wyświetl statystyki
+	cout << "\nOptymalizacja zakończona!" << endl;
+
+    // // 3. Start optymalizacji
+    // solution::clear_calls();
+    // cout << "Optymalizacja trwa (to moze potrwac ok. 30-60 sekund)..." << endl;
+    // solution opt = EA(ff6R, N, lb, ub, mi, lambda, sigma, epsilon, Nmax, data_exp);
+    //
+    // // 4. Wyniki do Tabeli 3
+    // cout << "\n--- WYNIKI DO TABELI 3 ---" << endl;
+    // cout << "b1_opt = " << opt.x(0) << " Ns/m" << endl;
+    // cout << "b2_opt = " << opt.x(1) << " Ns/m" << endl;
+    // cout << "Blad (y*) = " << opt.y(0) << endl;
+    // cout << "Liczba wywolan = " << solution::f_calls << endl;
+    //
+    // // 5. Zapis danych do wykresu (do Excela)
+    // matrix Y0(4, 1, 0.0);
+    // matrix* Y = solve_ode(df6, 0.0, 0.1, 100.0, Y0, opt.x);
+    // ofstream Sout("wynik_symulacji_lab6.csv");
+    // Sout << "t;x1_sim;x2_sim;x1_exp;x2_exp\n";
+    // for (int i = 0; i < 1001; i++) {
+    //     Sout << toExcel(Y[0](i, 0)) << ";"
+    //          << toExcel(Y[1](i, 0)) << ";"
+    //          << toExcel(Y[1](i, 2)) << ";"
+    //          << toExcel(data_exp(i, 0)) << ";"
+    //          << toExcel(data_exp(i, 1)) << "\n";
+    // }
+    // Sout.close();
+    // cout << "\nZapisano 'wynik_symulacji_lab6.csv'. Otworz go w Excelu." << endl;
+    // delete[] Y;
 }
 
 

@@ -1,3 +1,0 @@
-C:/Users/Tymon/CLionProjects/OPTYMALIZACJON-GROUP-CODE/cmake-build-debug/CMakeFiles/OPTYMALIZATION.dir
-C:/Users/Tymon/CLionProjects/OPTYMALIZACJON-GROUP-CODE/cmake-build-debug/CMakeFiles/edit_cache.dir
-C:/Users/Tymon/CLionProjects/OPTYMALIZACJON-GROUP-CODE/cmake-build-debug/CMakeFiles/rebuild_cache.dir
